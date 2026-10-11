@@ -62,5 +62,4 @@ export function getItem(
   );
 }
 
-/** Public URL of an R2 image key (served by /img/[...key]). Relative on purpose. */
-export const imageUrl = (key: string) => `/img/${key}`;
+export { imageUrl } from "./image";

@@ -55,7 +55,8 @@ export function AvailabilityBadge({
   return (
     <span
       className={cn(
-        "bg-muted text-muted-foreground inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+        // foreground/80 on muted ≈ 10.6:1 (muted-foreground was 4.34:1, below WCAG AA 4.5:1)
+        "bg-muted text-foreground/80 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
         className,
       )}
     >

@@ -11,12 +11,14 @@ import "../../globals.css";
 const latin = Geist({
   variable: "--font-latin",
   subsets: ["latin"],
-  display: "swap",
+  display: "optional",
 });
+// display "optional": never swap fonts after first paint (zero layout shift). The phone's
+// system Persian face is used until Vazirmatn is cached.
 const persian = Vazirmatn({
   variable: "--font-persian",
   subsets: ["arabic", "latin"],
-  display: "swap",
+  display: "optional",
   preload: false,
 });
 

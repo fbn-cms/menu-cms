@@ -1,5 +1,5 @@
 import { Utensils } from "lucide-react";
-import { imageUrl } from "@/lib/menu/fetch";
+import { imageUrl } from "@/lib/menu/image";
 import { cn } from "@/lib/utils";
 
 type Props = {

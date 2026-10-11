@@ -28,6 +28,8 @@ export function LanguageSwitcher({
           key={locale}
           href={swapLocale(pathname, locale)}
           hrefLang={locale}
+          // Don't fetch the other two languages on every page load (saves data on mobile).
+          prefetch={false}
           lang={locale}
           aria-current={locale === current ? "true" : undefined}
           onClick={() => {

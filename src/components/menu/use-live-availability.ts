@@ -3,10 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { publicEnv } from "@/lib/env";
-import {
-  availabilityPatchSchema,
-  type AvailabilityPatch,
-} from "@/lib/menu/types";
+import { parseAvailabilityPatch } from "@/lib/menu/patch";
+import type { AvailabilityPatch } from "@/lib/menu/types";
 
 type Status = "connecting" | "live" | "offline";
 
@@ -48,8 +46,8 @@ export function useLiveAvailability(
         const channel = supabase
           .channel(`menu:${restaurantId}`, { config: { private: true } })
           .on("broadcast", { event: "availability" }, ({ payload }) => {
-            const parsed = availabilityPatchSchema.safeParse(payload);
-            if (parsed.success) onPatchRef.current(parsed.data);
+            const patch = parseAvailabilityPatch(payload);
+            if (patch) onPatchRef.current(patch);
           })
           .subscribe((state) => {
             if (state === "SUBSCRIBED") set("live");
