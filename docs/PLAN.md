@@ -72,7 +72,8 @@ Deploy      —                         auto on merge to main         manual wor
 - [x] **Phase 0** — questions, LIMITS.md, PLAN.md
 - [x] **Phase 1** — scaffold Next + TS strict + Tailwind + shadcn, OpenNext, wrangler envs, ESLint/Prettier/Vitest/Playwright, pre-commit; `dev` and `preview` boot. Measure bundle size.
 - [x] **Phase 2 (local)** — migrations, RLS, triggers, RPCs, seed, 54 pgTAP tests green. See docs/SECURITY.md
-- [ ] **Phase 2 (remote)** — push migrations + seed to the demo Supabase project, migrations only to prod (needs G2)
+- [x] **Phase 2 (remote)** — 2026-10-11: demo = migrations + seed, 54/54 tests pass on live DB; prod = migrations only (0 rows, 37 policies, RLS on all tables). Both in ca-central-1, Postgres 17.11
+- [ ] Supabase dashboard (owner): disable public sign-ups on both projects; set Site URL once the workers.dev URL exists
 - [ ] **Phase 3** — public menu + i18n/RTL, search/filters, realtime, JSON-LD/OG, Lighthouse
 - [ ] **Phase 4** — magic-link auth, profiles bootstrap, middleware, role nav, 86 board, audit
 - [ ] **Phase 5** — item/category editors, image pipeline, reorder, bulk, concurrency, revalidation
