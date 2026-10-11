@@ -7,8 +7,13 @@ if (!dirs.length) {
   console.error("No build output found — run a build first.");
   process.exit(1);
 }
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const needles = ["SERVICE_ROLE", ...(serviceKey ? [serviceKey] : [])];
+const serviceKey = process.env.SUPABASE_SECRET_KEY;
+const needles = [
+  "SERVICE_ROLE",
+  "SUPABASE_SECRET_KEY",
+  "sb_secret_",
+  ...(serviceKey ? [serviceKey] : []),
+];
 const hits = [];
 const walk = (dir) => {
   for (const name of readdirSync(dir)) {

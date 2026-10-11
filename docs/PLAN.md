@@ -71,7 +71,8 @@ Deploy      —                         auto on merge to main         manual wor
 
 - [x] **Phase 0** — questions, LIMITS.md, PLAN.md
 - [x] **Phase 1** — scaffold Next + TS strict + Tailwind + shadcn, OpenNext, wrangler envs, ESLint/Prettier/Vitest/Playwright, pre-commit; `dev` and `preview` boot. Measure bundle size.
-- [ ] **Phase 2** — migrations, RLS, triggers, view, seed, pgTAP role tests (all green, local first, then demo project)
+- [x] **Phase 2 (local)** — migrations, RLS, triggers, RPCs, seed, 54 pgTAP tests green. See docs/SECURITY.md
+- [ ] **Phase 2 (remote)** — push migrations + seed to the demo Supabase project, migrations only to prod (needs G2)
 - [ ] **Phase 3** — public menu + i18n/RTL, search/filters, realtime, JSON-LD/OG, Lighthouse
 - [ ] **Phase 4** — magic-link auth, profiles bootstrap, middleware, role nav, 86 board, audit
 - [ ] **Phase 5** — item/category editors, image pipeline, reorder, bulk, concurrency, revalidation

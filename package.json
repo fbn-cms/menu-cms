@@ -18,11 +18,12 @@
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
-    "db:reset": "supabase db reset",
+    "db:reset": "supabase db reset && npm run db:dev-users",
     "db:test": "supabase test db",
     "prepare": "husky",
     "check:hosts": "node scripts/check-no-hardcoded-hosts.mjs",
-    "check:secrets": "node scripts/check-client-bundle.mjs"
+    "check:secrets": "node scripts/check-client-bundle.mjs",
+    "db:dev-users": "docker exec -i supabase_db_menu-cms psql -U postgres -v ON_ERROR_STOP=1 -q < supabase/dev-users.sql"
   },
   "dependencies": {
     "@opennextjs/cloudflare": "^1.20.10",
