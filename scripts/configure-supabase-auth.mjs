@@ -47,15 +47,24 @@ const config = {
   mailer_templates_magic_link_content: template("magic_link"),
   mailer_subjects_recovery: "Choose a new password",
   mailer_templates_recovery_content: template("recovery"),
-  // Gmail SMTP (App Password). Gmail allows ~500 messages/day.
-  smtp_host: "smtp.gmail.com",
-  smtp_port: "465",
-  smtp_user: need("GMAIL_SMTP_USER"),
-  smtp_pass: need("GMAIL_SMTP_APP_PASSWORD"),
-  smtp_admin_email: need("GMAIL_SMTP_USER"),
-  smtp_sender_name: "Restaurant menu",
-  rate_limit_email_sent: 30,
 };
+// Gmail SMTP (App Password, ~500 messages/day). Optional: without it, password sign-in still
+// works but invites, magic links and password resets can't be emailed.
+if (env.GMAIL_SMTP_APP_PASSWORD) {
+  Object.assign(config, {
+    smtp_host: "smtp.gmail.com",
+    smtp_port: "465",
+    smtp_user: need("GMAIL_SMTP_USER"),
+    smtp_pass: env.GMAIL_SMTP_APP_PASSWORD.replace(/\s+/g, ""),
+    smtp_admin_email: need("GMAIL_SMTP_USER"),
+    smtp_sender_name: "Restaurant menu",
+    rate_limit_email_sent: 30,
+  });
+} else {
+  console.warn(
+    "No GMAIL_SMTP_APP_PASSWORD: configuring without email delivery.",
+  );
+}
 
 if (flag === "--dry-run") {
   console.log(ref, {
@@ -86,5 +95,5 @@ if (!res.ok) {
 }
 const applied = await res.json();
 console.log(
-  `${envName} (${ref}) configured: site_url=${applied.site_url} signup_disabled=${applied.disable_signup} email=${applied.external_email_enabled} smtp=${applied.smtp_host} min_password=${applied.password_min_length}`,
+  `${envName} (${ref}) configured: site_url=${applied.site_url} signup_disabled=${applied.disable_signup} email=${applied.external_email_enabled} smtp=${applied.smtp_host ?? "none"} min_password=${applied.password_min_length}`,
 );

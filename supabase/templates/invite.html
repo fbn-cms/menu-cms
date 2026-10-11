@@ -1,6 +1,7 @@
 <!doctype html><html><body style="font-family:system-ui,sans-serif;max-width:480px;margin:auto;padding:24px;color:#111">
 <h2>You're invited to the restaurant menu admin</h2>
-<p>Click below to choose your password. The link works once and expires in 24 hours.</p>
+<p>Click below to choose your password. The link works once and expires in 1 hour.</p>
+<p style="color:#666;font-size:13px">Link expired? Open the admin login page and use “Forgot password?” with this email address.</p>
 <p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/admin/set-password" style="display:inline-block;background:#111;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none">Accept invite</a></p>
 <p style="color:#666;font-size:13px">If you weren't expecting this, you can ignore this email.</p>
 </body></html>
