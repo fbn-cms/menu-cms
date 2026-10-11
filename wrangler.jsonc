@@ -1,0 +1,90 @@
+// Cloudflare Worker config. Top level = local dev/preview; `env.demo` and `env.production`
+// are the two deployed environments. Bindings are NOT inherited by envs, so each env
+// repeats them. IDs marked REPLACE_ME are filled in at gate G3 (Cloudflare account).
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "menu-local",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
+  "observability": { "enabled": true },
+  "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "menu-local" }],
+  "r2_buckets": [
+    { "binding": "MENU_BUCKET", "bucket_name": "menu-local-images" },
+    {
+      "binding": "NEXT_INC_CACHE_R2_BUCKET",
+      "bucket_name": "menu-local-cache",
+    },
+  ],
+  "d1_databases": [
+    {
+      "binding": "NEXT_TAG_CACHE_D1",
+      "database_name": "menu-local-tags",
+      "database_id": "local",
+    },
+  ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" },
+    ],
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DOQueueHandler"] }],
+
+  "env": {
+    "demo": {
+      "name": "menu-demo",
+      "services": [
+        { "binding": "WORKER_SELF_REFERENCE", "service": "menu-demo" },
+      ],
+      "r2_buckets": [
+        { "binding": "MENU_BUCKET", "bucket_name": "menu-demo-images" },
+        {
+          "binding": "NEXT_INC_CACHE_R2_BUCKET",
+          "bucket_name": "menu-demo-cache",
+        },
+      ],
+      "d1_databases": [
+        {
+          "binding": "NEXT_TAG_CACHE_D1",
+          "database_name": "menu-demo-tags",
+          "database_id": "REPLACE_ME",
+        },
+      ],
+      "durable_objects": {
+        "bindings": [
+          { "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" },
+        ],
+      },
+      // One hourly trigger per Worker; the handler dispatches keep-alive, expiry, cleanup.
+      // (Free plan: 5 cron triggers per account.)
+      "triggers": { "crons": ["0 * * * *"] },
+    },
+    "production": {
+      "name": "menu-prod",
+      "services": [
+        { "binding": "WORKER_SELF_REFERENCE", "service": "menu-prod" },
+      ],
+      "r2_buckets": [
+        { "binding": "MENU_BUCKET", "bucket_name": "menu-prod-images" },
+        {
+          "binding": "NEXT_INC_CACHE_R2_BUCKET",
+          "bucket_name": "menu-prod-cache",
+        },
+      ],
+      "d1_databases": [
+        {
+          "binding": "NEXT_TAG_CACHE_D1",
+          "database_name": "menu-prod-tags",
+          "database_id": "REPLACE_ME",
+        },
+      ],
+      "durable_objects": {
+        "bindings": [
+          { "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" },
+        ],
+      },
+      "triggers": { "crons": ["0 * * * *"] },
+    },
+  },
+}
