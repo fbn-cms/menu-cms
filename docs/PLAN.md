@@ -74,7 +74,12 @@ Deploy      —                         auto on merge to main         manual wor
 - [x] **Phase 2 (local)** — migrations, RLS, triggers, RPCs, seed, 54 pgTAP tests green. See docs/SECURITY.md
 - [x] **Phase 2 (remote)** — 2026-10-11: demo = migrations + seed, 54/54 tests pass on live DB; prod = migrations only (0 rows, 37 policies, RLS on all tables). Both in ca-central-1, Postgres 17.11
 - [ ] Supabase dashboard (owner): disable public sign-ups on both projects; set Site URL once the workers.dev URL exists
-- [ ] **Phase 3** — public menu + i18n/RTL, search/filters, realtime, JSON-LD/OG, Lighthouse
+- [x] **Phase 3** — public menu + i18n/RTL, search/filters, live availability, JSON-LD, hreflang. 18 Playwright tests (incl. RTL overflow at 360px and live sell-out re-sort). Lighthouse pending first demo deploy
+  - Realtime uses a PRIVATE broadcast channel (public channels let any client send fake updates)
+  - Fonts: next/font self-hosts Geist + Vazirmatn from our origin (spec said R2; same effect, simpler)
+  - OG image per item = its hero photo when present (next/og image generation would exceed the 10 ms CPU limit)
+  - Worker bundle 1.8 MiB gzip (limit 3 MiB on Free) — watch this
+  - TODO later: variant name translations; design/CSS polish pass
 - [ ] **Phase 4** — magic-link auth, profiles bootstrap, middleware, role nav, 86 board, audit
 - [ ] **Phase 5** — item/category editors, image pipeline, reorder, bulk, concurrency, revalidation
 - [ ] **Phase 6** — QR (single code, level H), `/t/[slug]` scan logging (no bulk print on workers.dev)

@@ -4,6 +4,8 @@ const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 
 export default defineConfig({
   testDir: "tests/e2e",
+  // One worker: tests mutate the shared local database (live availability).
+  workers: 1,
   use: { baseURL },
   projects: [
     { name: "mobile-chrome", use: { ...devices["Pixel 7"] } },

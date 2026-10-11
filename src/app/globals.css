@@ -7,8 +7,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-latin), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -126,5 +126,45 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* ---------------------------------------------------------------- menu */
+@layer base {
+  /* Persian gets a face with full Arabic-script coverage. */
+  html[data-locale="fa"] {
+    font-family:
+      var(--font-persian), var(--font-latin), ui-sans-serif, system-ui,
+      sans-serif;
+  }
+}
+
+@layer components {
+  /* Filter / category chip — 44px touch target (WCAG 2.5.5). Logical properties only. */
+  .chip {
+    @apply bg-background hover:bg-muted focus-visible:ring-ring inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:outline-none;
+  }
+  .chip-active {
+    @apply border-foreground bg-foreground text-background hover:bg-foreground/90;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Items glide to their new position when a dish sells out live (View Transitions API). */
+::view-transition-group(*) {
+  animation-duration: 450ms;
+  animation-timing-function: cubic-bezier(0.2, 0, 0, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*) {
+    animation: none;
   }
 }

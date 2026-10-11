@@ -1,0 +1,66 @@
+import { Ban, CircleCheck, Hourglass } from "lucide-react";
+import type { Messages } from "@/i18n/t";
+import { t } from "@/i18n/t";
+import type { MenuItem } from "@/lib/menu/types";
+import { cn } from "@/lib/utils";
+
+type Props = {
+  availability: MenuItem["availability"];
+  remainingQty: number | null;
+  messages: Messages;
+  formatCount: (n: number) => string;
+  className?: string;
+};
+
+/** Availability is always text + icon, never colour alone (WCAG 1.4.1). */
+export function AvailabilityBadge({
+  availability,
+  remainingQty,
+  messages,
+  formatCount,
+  className,
+}: Props) {
+  if (availability === "available") {
+    return (
+      <span
+        className={cn(
+          "inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400",
+          className,
+        )}
+      >
+        <CircleCheck aria-hidden="true" className="size-3.5" />
+        {messages.available}
+      </span>
+    );
+  }
+  if (availability === "limited") {
+    return (
+      <span
+        className={cn(
+          "inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200",
+          className,
+        )}
+      >
+        <Hourglass aria-hidden="true" className="size-3.5" />
+        {messages.limited}
+        {remainingQty != null && remainingQty > 0 && (
+          <span>
+            {" "}
+            · {t(messages.remaining, { count: formatCount(remainingQty) })}
+          </span>
+        )}
+      </span>
+    );
+  }
+  return (
+    <span
+      className={cn(
+        "bg-muted text-muted-foreground inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+        className,
+      )}
+    >
+      <Ban aria-hidden="true" className="size-3.5" />
+      {messages.unavailable}
+    </span>
+  );
+}
