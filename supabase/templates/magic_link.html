@@ -1,0 +1,6 @@
+<!doctype html><html><body style="font-family:system-ui,sans-serif;max-width:480px;margin:auto;padding:24px;color:#111">
+<h2>Your sign-in link</h2>
+<p>Click below to sign in to the menu admin. The link works once and expires in 1 hour.</p>
+<p><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/admin" style="display:inline-block;background:#111;color:#fff;padding:12px 20px;border-radius:10px;text-decoration:none">Sign in</a></p>
+<p style="color:#666;font-size:13px">If you didn't ask for this, you can ignore this email.</p>
+</body></html>

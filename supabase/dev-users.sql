@@ -1,6 +1,6 @@
 -- LOCAL DEVELOPMENT ONLY — never run against demo or production.
--- Creates owner/admin/staff test accounts. Sign in with a magic link; emails land in
--- Mailpit at http://127.0.0.1:54324.
+-- Creates owner/admin/staff test accounts, password: local-dev-password
+-- (or use a magic link; emails land in Mailpit at http://127.0.0.1:54324).
 do $$
 declare
   u record;
@@ -11,10 +11,11 @@ begin
     ('00000000-0000-4000-8000-0000000000ac'::uuid, 'staff@demo.test', 'Sam Staff', 'staff'::public.app_role)
   ) as t(id, email, full_name, role)
   loop
-    insert into auth.users (id, instance_id, aud, role, email, email_confirmed_at,
+    insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
       raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
       confirmation_token, recovery_token, email_change_token_new, email_change)
-    values (u.id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', u.email, now(),
+    values (u.id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', u.email,
+      extensions.crypt('local-dev-password', extensions.gen_salt('bf')), now(),
       '{"provider":"email","providers":["email"]}', jsonb_build_object('full_name', u.full_name), now(), now(),
       '', '', '', '')
     on conflict (id) do nothing;

@@ -83,7 +83,10 @@ Deploy      —                         auto on merge to main         manual wor
   - Fonts use display:optional (zero layout shift); no Zod in browser code (saved ~100 KB gz)
   - Demo deployed 2026-10-11: https://menu-demo.fbn-cms-managment.workers.dev (manual `opennextjs-cloudflare deploy --env demo` until CI in Phase 7)
   - TODO later: variant name translations; design/CSS polish pass
-- [ ] **Phase 4** — magic-link auth, profiles bootstrap, middleware, role nav, 86 board, audit
+- [x] **Phase 4 (local)** — email+password AND magic-link sign-in (owner decision), invite-only, set/forgot password, middleware guard, role nav (staff: 86 board only), 86 board (2 taps, optimistic, stale-write refusal, until presets incl. DST), reset-all, team invites/roles/deactivate (+auth ban), audit log page. 18 admin e2e tests ×2 viewports
+  - middleware.ts (edge) instead of Next 16 proxy.ts: OpenNext's Node-proxy support is experimental
+  - Supabase: [auth.email] enable_signup must stay TRUE (it is the email provider switch); sign-ups are blocked by [auth] enable_signup=false
+  - Hosted auth config + first accounts: scripts/configure-supabase-auth.mjs, scripts/bootstrap-team.mjs
 - [ ] **Phase 5** — item/category editors, image pipeline, reorder, bulk, concurrency, revalidation
 - [ ] **Phase 6** — QR (single code, level H), `/t/[slug]` scan logging (no bulk print on workers.dev)
 - [ ] **Phase 7** — rate limits, headers/CSP, cron dispatcher, backups, CI/CD demo+prod, RUNBOOK, HANDOVER
