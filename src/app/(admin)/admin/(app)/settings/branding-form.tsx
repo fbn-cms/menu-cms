@@ -1,0 +1,452 @@
+"use client";
+
+import { useMemo, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import {
+  Ban,
+  Check,
+  CircleCheck,
+  Hourglass,
+  ImageUp,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { saveBranding } from "@/lib/actions/settings";
+import { resizeToWebp } from "@/lib/images/client-resize";
+import { imageUrl } from "@/lib/menu/image";
+import {
+  checkTheme,
+  deriveTheme,
+  isDark,
+  PRESETS,
+  type ThemeInput,
+} from "@/lib/theme";
+import { cn } from "@/lib/utils";
+
+type Initial = {
+  name: string;
+  logoKey: string | null;
+  theme: ThemeInput;
+  updatedAt: string;
+};
+const LOGO_MAX_SIDE = 512;
+
+export function BrandingForm({ initial }: { initial: Initial }) {
+  const router = useRouter();
+  const [name, setName] = useState(initial.name);
+  const [logoKey, setLogoKey] = useState(initial.logoKey);
+  const [theme, setTheme] = useState<ThemeInput>(initial.theme);
+  const [uploading, setUploading] = useState(false);
+  const [saving, startSave] = useTransition();
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const problems = useMemo(() => checkTheme(theme), [theme]);
+  const vars = useMemo(() => deriveTheme(theme), [theme]);
+  const set = (patch: Partial<ThemeInput>) =>
+    setTheme((t) => ({ ...t, ...patch }));
+  const dirty =
+    name !== initial.name ||
+    logoKey !== initial.logoKey ||
+    JSON.stringify(theme) !== JSON.stringify(initial.theme);
+
+  const onLogo = async (file: File | undefined) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const webp = await resizeToWebp(file, LOGO_MAX_SIDE, 0.9);
+      const res = await fetch("/api/admin/images?kind=logo", {
+        method: "POST",
+        headers: { "Content-Type": "image/webp" },
+        body: webp,
+      });
+      const body = (await res.json()) as {
+        key?: string;
+        width?: number;
+        height?: number;
+        error?: string;
+      };
+      if (!res.ok || !body.key) throw new Error(body.error ?? "Upload failed.");
+      setLogoKey(body.key);
+      set({ logoWidth: body.width ?? null, logoHeight: body.height ?? null });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const save = () =>
+    startSave(async () => {
+      const res = await saveBranding({
+        name,
+        logoKey,
+        theme,
+        expectedUpdatedAt: initial.updatedAt,
+      });
+      if (res.ok) {
+        toast.success("Saved — the menu is updated.");
+        router.refresh();
+      } else toast.error(res.error);
+    });
+
+  return (
+    <div className="grid gap-6 pt-2 lg:grid-cols-[1fr_320px]">
+      <div className="space-y-6">
+        {/* Name */}
+        <section
+          aria-labelledby="s-name"
+          className="space-y-3 rounded-2xl border p-4"
+        >
+          <h2 id="s-name" className="font-semibold">
+            Name
+          </h2>
+          <div className="space-y-1.5">
+            <Label htmlFor="name">Name of the place</Label>
+            <Input
+              id="name"
+              value={name}
+              maxLength={120}
+              onChange={(e) => setName(e.target.value)}
+              className="h-11 text-base"
+            />
+          </div>
+          <label className="flex min-h-11 items-center gap-3">
+            <input
+              type="checkbox"
+              checked={theme.showName}
+              onChange={(e) => set({ showName: e.target.checked })}
+              className="accent-foreground size-5"
+            />
+            Show the name next to the logo
+          </label>
+        </section>
+
+        {/* Logo */}
+        <section
+          aria-labelledby="s-logo"
+          className="space-y-3 rounded-2xl border p-4"
+        >
+          <h2 id="s-logo" className="font-semibold">
+            Logo
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            PNG, JPG or WebP. A wide logo on a transparent background looks
+            best. It&apos;s resized on your phone before upload.
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="bg-muted/50 flex h-16 min-w-16 items-center justify-center rounded-xl border px-3">
+              {logoKey ? (
+                // eslint-disable-next-line @next/next/no-img-element -- no next/image on Workers
+                <img
+                  src={imageUrl(logoKey)}
+                  alt="Current logo"
+                  className="max-h-12 w-auto"
+                />
+              ) : (
+                <span className="text-muted-foreground text-xs">No logo</span>
+              )}
+            </div>
+            <input
+              ref={fileRef}
+              id="logo"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="sr-only"
+              onChange={(e) => void onLogo(e.target.files?.[0])}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11"
+              disabled={uploading}
+              onClick={() => fileRef.current?.click()}
+            >
+              <ImageUp aria-hidden="true" className="size-4" />
+              {uploading
+                ? "Uploading…"
+                : logoKey
+                  ? "Replace logo"
+                  : "Upload logo"}
+            </Button>
+            {logoKey && (
+              <Button
+                type="button"
+                variant="ghost"
+                className="h-11"
+                onClick={() => {
+                  setLogoKey(null);
+                  set({ logoWidth: null, logoHeight: null });
+                }}
+              >
+                <Trash2 aria-hidden="true" className="size-4" />
+                Remove
+              </Button>
+            )}
+          </div>
+        </section>
+
+        {/* Colours */}
+        <section
+          aria-labelledby="s-colours"
+          className="space-y-4 rounded-2xl border p-4"
+        >
+          <h2 id="s-colours" className="font-semibold">
+            Colours
+          </h2>
+          <div
+            role="radiogroup"
+            aria-label="Palette"
+            className="grid grid-cols-2 gap-2 sm:grid-cols-3"
+          >
+            {PRESETS.map((p) => {
+              const on = theme.preset === p.preset;
+              return (
+                <button
+                  key={p.preset}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  onClick={() =>
+                    set({
+                      preset: p.preset,
+                      background: p.background,
+                      foreground: p.foreground,
+                      accent: p.accent,
+                    })
+                  }
+                  className={cn(
+                    "flex min-h-12 items-center gap-2 rounded-xl border-2 px-3 text-sm",
+                    on ? "border-foreground" : "border-border",
+                  )}
+                >
+                  <span className="flex -space-x-1.5" aria-hidden="true">
+                    {/* Fixed 3-slot list (colours can repeat, e.g. Classic text = accent). */}
+                    {[p.background, p.foreground, p.accent].map((c, slot) => (
+                      <span
+                        key={slot}
+                        className="size-5 rounded-full border border-black/15"
+                        style={{ background: c }}
+                      />
+                    ))}
+                  </span>
+                  {p.label}
+                  {on && (
+                    <Check aria-hidden="true" className="ms-auto size-4" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <ColourField
+              id="bg"
+              label="Background"
+              value={theme.background}
+              onChange={(v) => set({ preset: "custom", background: v })}
+            />
+            <ColourField
+              id="fg"
+              label="Text"
+              value={theme.foreground}
+              onChange={(v) => set({ preset: "custom", foreground: v })}
+              invalid={problems.some((p) => p.field === "foreground")}
+            />
+            <ColourField
+              id="ac"
+              label="Accent (buttons)"
+              value={theme.accent}
+              onChange={(v) => set({ preset: "custom", accent: v })}
+              invalid={problems.some((p) => p.field === "accent")}
+            />
+          </div>
+          {problems.length > 0 && (
+            <ul
+              role="alert"
+              className="bg-destructive/10 text-destructive space-y-1 rounded-xl p-3 text-sm"
+            >
+              {problems.map((p) => (
+                <li key={p.message} className="flex gap-2">
+                  <TriangleAlert
+                    aria-hidden="true"
+                    className="mt-0.5 size-4 shrink-0"
+                  />
+                  {p.message}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <div className="bg-background/95 sticky bottom-0 -mx-4 border-t px-4 py-3 backdrop-blur">
+          <Button
+            type="button"
+            className="h-12 w-full"
+            disabled={
+              !dirty ||
+              saving ||
+              uploading ||
+              problems.length > 0 ||
+              !name.trim()
+            }
+            onClick={save}
+          >
+            {saving ? "Saving…" : dirty ? "Save changes" : "No changes"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Live preview — same CSS variables the public menu uses. */}
+      <aside aria-label="Preview" className="lg:sticky lg:top-32 lg:self-start">
+        <p className="mb-2 text-sm font-medium">Preview</p>
+        {/* Inline vars on the .dark element itself, so shadcn's .dark defaults can't override them. */}
+        <div className="overflow-hidden rounded-2xl border shadow-sm">
+          <div
+            style={vars as React.CSSProperties}
+            className={cn(
+              "bg-background text-foreground",
+              isDark(theme.background) && "dark",
+            )}
+          >
+            <div className="flex items-center gap-2 px-4 pt-4">
+              {logoKey && (
+                // eslint-disable-next-line @next/next/no-img-element -- no next/image on Workers
+                <img src={imageUrl(logoKey)} alt="" className="h-9 w-auto" />
+              )}
+              {(theme.showName || !logoKey) && (
+                <span className="text-lg font-semibold">{name || "Name"}</span>
+              )}
+            </div>
+            <div className="flex gap-2 border-b px-4 py-2">
+              <span className="chip chip-active">Starters</span>
+              <span className="chip">Mains</span>
+            </div>
+            <div className="divide-y px-4">
+              <PreviewRow
+                title="Kashk-e Bademjan"
+                price="$12.00"
+                badge={
+                  <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400">
+                    <CircleCheck className="size-3.5" aria-hidden="true" />
+                    Available
+                  </span>
+                }
+              />
+              <PreviewRow
+                title="Mirza Ghasemi"
+                price="$11.00"
+                badge={
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+                    <Hourglass className="size-3.5" aria-hidden="true" />
+                    Limited
+                  </span>
+                }
+              />
+              <PreviewRow
+                dimmed
+                title="Soup of the Day"
+                price="$9.00"
+                badge={
+                  <span className="bg-muted text-foreground/80 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium">
+                    <Ban className="size-3.5" aria-hidden="true" />
+                    Sold out today
+                  </span>
+                }
+              />
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function PreviewRow({
+  title,
+  price,
+  badge,
+  dimmed,
+}: {
+  title: string;
+  price: string;
+  badge: React.ReactNode;
+  dimmed?: boolean;
+}) {
+  return (
+    <div className="flex gap-3 py-3">
+      <div
+        className={cn(
+          "bg-muted size-12 shrink-0 rounded-lg",
+          dimmed && "opacity-50",
+        )}
+      />
+      <div className="min-w-0 flex-1">
+        <div className="flex justify-between gap-2 text-sm">
+          <span
+            className={cn("font-medium", dimmed && "text-muted-foreground")}
+          >
+            {title}
+          </span>
+          <span
+            className={cn("font-medium", dimmed && "text-muted-foreground")}
+          >
+            {price}
+          </span>
+        </div>
+        <p className="text-muted-foreground text-xs">Smoky, rich and fresh.</p>
+        <div className="mt-1">{badge}</div>
+      </div>
+    </div>
+  );
+}
+
+function ColourField({
+  id,
+  label,
+  value,
+  onChange,
+  invalid,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  invalid?: boolean;
+}) {
+  const [text, setText] = useState(value);
+  const [last, setLast] = useState(value);
+  if (last !== value) {
+    setLast(value);
+    setText(value);
+  }
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="flex items-center gap-2">
+        <input
+          type="color"
+          aria-label={`${label} colour picker`}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-11 w-12 shrink-0 cursor-pointer rounded-lg border bg-transparent p-1"
+        />
+        <Input
+          id={id}
+          value={text}
+          aria-invalid={invalid}
+          maxLength={7}
+          onChange={(e) => {
+            setText(e.target.value);
+            if (/^#[0-9a-f]{6}$/i.test(e.target.value))
+              onChange(e.target.value.toLowerCase());
+          }}
+          className="h-11 font-mono text-base"
+        />
+      </div>
+    </div>
+  );
+}

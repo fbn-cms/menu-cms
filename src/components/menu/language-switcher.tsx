@@ -42,7 +42,7 @@ export function LanguageSwitcher({
           className={cn(
             "inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg px-2 text-sm",
             locale === current
-              ? "bg-foreground text-background font-medium"
+              ? "bg-primary text-primary-foreground font-medium"
               : "hover:bg-muted",
           )}
         >

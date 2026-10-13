@@ -145,7 +145,7 @@
     @apply bg-background hover:bg-muted focus-visible:ring-ring inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-sm whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:outline-none;
   }
   .chip-active {
-    @apply border-foreground bg-foreground text-background hover:bg-foreground/90;
+    @apply border-primary bg-primary text-primary-foreground hover:bg-primary/90;
   }
 }
 

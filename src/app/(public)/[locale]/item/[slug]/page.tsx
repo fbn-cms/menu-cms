@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { RestaurantTheme } from "@/components/menu/restaurant-theme";
 import { ChevronLeft, Clock, Flame, Utensils, Zap } from "lucide-react";
 import { ItemLiveAvailability } from "@/components/menu/item-live-availability";
 import { LanguageSwitcher } from "@/components/menu/language-switcher";
@@ -75,7 +76,7 @@ export default async function ItemPage({
   } as const;
 
   return (
-    <>
+    <RestaurantTheme theme={menu.restaurant.theme}>
       <header className="flex items-center justify-between gap-2 px-2 py-2">
         <Link
           href={`/${locale}/menu/${item.category.slug}`}
@@ -243,7 +244,7 @@ export default async function ItemPage({
           )}
         </article>
       </main>
-    </>
+    </RestaurantTheme>
   );
 }
 

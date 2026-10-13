@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { RestaurantTheme } from "@/components/menu/restaurant-theme";
 import { MenuView } from "@/components/menu/menu-view";
 import { SiteHeader } from "@/components/menu/site-header";
 import { isLocale } from "@/i18n/config";
@@ -38,7 +39,7 @@ export default async function CategoryPage({
   if (!menu || !cat) notFound();
   const messages = getMessages(locale);
   return (
-    <>
+    <RestaurantTheme theme={menu.restaurant.theme}>
       <SiteHeader
         restaurant={menu.restaurant}
         locale={locale}
@@ -53,6 +54,6 @@ export default async function CategoryPage({
           categorySlug={category}
         />
       </main>
-    </>
+    </RestaurantTheme>
   );
 }

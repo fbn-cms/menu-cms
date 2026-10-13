@@ -94,7 +94,7 @@ test.describe("admin access", () => {
     await signIn(page, "owner@demo.test");
     await expect(
       page.getByRole("navigation", { name: "Admin" }).getByRole("link"),
-    ).toHaveText(["Dashboard", "86 board", "Team", "Audit log"]);
+    ).toHaveText(["Dashboard", "86 board", "Team", "Settings", "Audit log"]);
   });
 });
 

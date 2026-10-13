@@ -1,9 +1,8 @@
 import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { IMAGE_KEY_PATTERN as KEY_PATTERN } from "@/lib/images/webp";
 
 // Serves images from the R2 binding. Keys are content-hashed, so responses are immutable and
-// cached forever at the edge: {restaurant_id}/{item_id}/{icon|hero}-{hash}.webp
-const KEY_PATTERN =
-  /^[0-9a-f-]{36}\/[0-9a-f-]{36}\/(icon|hero|logo)-[0-9a-f]{8,64}\.webp$/;
+// cached forever at the edge: {restaurant_id}/{item_id|brand}/{icon|hero|logo}-{hash}.webp
 
 export async function GET(
   _req: Request,

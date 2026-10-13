@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { RestaurantTheme } from "@/components/menu/restaurant-theme";
 import { LocalePreference } from "@/components/menu/locale-preference";
 import { MenuView } from "@/components/menu/menu-view";
 import { SiteHeader } from "@/components/menu/site-header";
@@ -45,7 +46,7 @@ export default async function MenuPage({
   if (!menu) notFound();
   const messages = getMessages(locale);
   return (
-    <>
+    <RestaurantTheme theme={menu.restaurant.theme}>
       <LocalePreference current={locale} />
       <SiteHeader
         restaurant={menu.restaurant}
@@ -57,7 +58,7 @@ export default async function MenuPage({
         <MenuView menu={menu} locale={locale} messages={messages} />
       </main>
       <JsonLd data={restaurantJsonLd(menu, locale)} />
-    </>
+    </RestaurantTheme>
   );
 }
 
