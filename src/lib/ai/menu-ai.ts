@@ -136,7 +136,42 @@ const userMessage = (i: ComposeInput) =>
   });
 
 // ---------------------------------------------------------------- providers
-async function runCloudflare(input: ComposeInput): Promise<unknown> {
+// The free model can't reliably do everything in one request (understand a Persian or French
+// name, write, and translate). It does well in two steps: (1) the dish in English, (2) translate.
+const CF_STEP1 = `You write menu text for a restaurant. You receive a dish, possibly named in Persian or French.
+Return it in ENGLISH:
+- name: the dish's usual English menu name (for Persian dishes, the common transliteration, e.g. "ته‌چین" → "Tahchin").
+- short_description: ALWAYS write one line for the menu list (60–120 characters) — unless "english_short_description" is given, then return that unchanged.
+- long_description: ALWAYS write 2–3 sentences (at most 380 characters) — unless "english_long_description" is given, then return that unchanged.
+- options: the size/option names in English, same order.
+Use ONLY facts implied by the name, category or cook's notes (which may be in Persian or French — use them). Never invent ingredients, allergens or dietary claims. Plain language, no hype, no emojis.
+The descriptions must say more than the name. Example:
+input {"category":"Starters","dish_name":"Ash Reshteh","name_language":"English","cook_notes":"noodles, herbs, beans, kashk"}
+output {"name":"Ash Reshteh","short_description":"Thick herb and noodle soup with beans, finished with kashk.","long_description":"A hearty Persian soup of fresh herbs, beans and thin noodles, simmered slowly and topped with kashk (fermented whey).","options":[]}
+Fixed terms:
+${glossaryText()}`;
+
+const CF_STEP2 = `You translate restaurant menu text from English into Persian (Farsi, as used in Iran) and French (as used in Canada).
+- Natural menu language, not word-for-word. Keep the meaning exactly; add nothing.
+- Persian: proper Persian script, zero-width non-joiner where standard (e.g. "می‌شود"), Western digits 0–9.
+- French: Canadian French typography.
+- options: same order and count.
+- ALWAYS use these fixed terms:
+${glossaryText()}`;
+
+const enOnlySchema = { ...langJson };
+const faFrSchema = {
+  type: "object",
+  properties: { fa: langJson, fr: langJson },
+  required: ["fa", "fr"],
+  additionalProperties: false,
+};
+
+async function cfRun(
+  system: string,
+  user: string,
+  schema: object,
+): Promise<unknown> {
   const { env } = await getCloudflareContext({ async: true });
   if (!env.AI)
     throw new AiError(
@@ -148,14 +183,11 @@ async function runCloudflare(input: ComposeInput): Promise<unknown> {
       (env.AI_TEXT_MODEL as string | undefined) || CLOUDFLARE_MODEL,
       {
         messages: [
-          { role: "system", content: SYSTEM },
-          { role: "user", content: userMessage(input) },
+          { role: "system", content: system },
+          { role: "user", content: user },
         ],
-        response_format: {
-          type: "json_schema",
-          json_schema: composeJsonSchema,
-        },
-        max_tokens: 2500,
+        response_format: { type: "json_schema", json_schema: schema },
+        max_tokens: 1800,
         temperature: 0.3,
       } as never,
     )) as { response?: unknown };
@@ -171,6 +203,47 @@ async function runCloudflare(input: ComposeInput): Promise<unknown> {
     }
     throw e;
   }
+}
+
+async function runCloudflare(input: ComposeInput): Promise<unknown> {
+  const en = langText.parse(
+    await cfRun(
+      CF_STEP1,
+      // Only include fields that have content: an empty "provided" field made the model copy
+      // the empty string instead of writing (seen in live testing).
+      JSON.stringify({
+        category: input.category,
+        dish_name: input.name,
+        name_language: { en: "English", fa: "Persian", fr: "French" }[
+          input.source
+        ],
+        ...(input.source === "en" && input.short_description
+          ? { english_short_description: input.short_description }
+          : {}),
+        ...(input.source === "en" && input.long_description
+          ? { english_long_description: input.long_description }
+          : {}),
+        ...(input.source !== "en" &&
+        (input.short_description || input.long_description)
+          ? {
+              description_in_source_language: [
+                input.short_description,
+                input.long_description,
+              ]
+                .filter(Boolean)
+                .join(" "),
+            }
+          : {}),
+        ...(input.notes ? { cook_notes: input.notes } : {}),
+        options: input.options,
+      }),
+      enOnlySchema,
+    ),
+  );
+  const tr = z
+    .object({ fa: langText, fr: langText })
+    .parse(await cfRun(CF_STEP2, JSON.stringify(en), faFrSchema));
+  return { en, fa: tr.fa, fr: tr.fr };
 }
 
 /** Models that accept the server-side refusal fallback ("fallbacks: default"). */
@@ -386,14 +459,18 @@ export async function composeDish(
       const out = finish(composeOutput.parse(raw), input);
       // Weaker models sometimes skip the writing part (empty, or just the dish name again).
       // Treat that as a failed answer and retry once.
+      // (Non-empty and not just the name. A length rule was too strict: glossary names can be
+      // long, e.g. "Tahchin (gâteau de riz au safran)".)
       const written = (s: string, name: string) =>
-        s.trim().length > name.trim().length + 10;
+        s.trim().length >= 12 && s.trim() !== name.trim();
       for (const l of LANGS) {
         if (
           !input.short_description &&
           !written(out[l].short_description, out[l].name)
         ) {
-          throw new Error(`short description missing in ${l}`);
+          throw new Error(
+            `short description missing in ${l}: name=${JSON.stringify(out[l].name)} short=${JSON.stringify(out[l].short_description)}`,
+          );
         }
       }
       return out;
