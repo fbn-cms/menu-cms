@@ -1,6 +1,9 @@
-// Fails if server-only secrets leak into anything the browser can download. Run after a build.
-// Checks for: the SERVICE_ROLE marker, anything shaped like a Supabase secret key, and the
-// literal secret values from the local env files (if present).
+// Fails the deploy if secrets or local-only settings leak into the build. Run after a build.
+//  1. Browser output (.next/static, .open-next/assets): the SERVICE_ROLE marker, anything shaped
+//     like a Supabase secret key, and the literal secret values from the local env files.
+//  2. Server env baked by OpenNext (.open-next/cloudflare/next-env.mjs): it copies .env* values
+//     into the Worker. Secrets must come from `wrangler secret`, and test switches (AI_FAKE)
+//     must never ship.
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 
@@ -16,6 +19,7 @@ const secretValues = new Set(
   ),
 );
 for (const file of [
+  ".env.development.local",
   ".env.local",
   ".env.demo",
   ".env.prod",
@@ -23,7 +27,7 @@ for (const file of [
 ]) {
   if (!existsSync(file)) continue;
   for (const m of readFileSync(file, "utf8").matchAll(
-    /^(SUPABASE_SECRET_KEY|SUPABASE_DB_PASSWORD|CLOUDFLARE_API_TOKEN)=(.+)$/gm,
+    /^(SUPABASE_SECRET_KEY|SUPABASE_DB_PASSWORD|CLOUDFLARE_API_TOKEN|SUPABASE_ACCESS_TOKEN|GMAIL_SMTP_APP_PASSWORD)=(.+)$/gm,
   )) {
     if (m[2].trim()) secretValues.add(m[2].trim());
   }
@@ -46,10 +50,31 @@ const walk = (dir) => {
   }
 };
 dirs.forEach(walk);
+
+const nextEnv = ".open-next/cloudflare/next-env.mjs";
+if (existsSync(nextEnv)) {
+  const body = readFileSync(nextEnv, "utf8");
+  if (/AI_FAKE/.test(body)) {
+    hits.push(`${nextEnv}: contains AI_FAKE (local-only test switch)`);
+  }
+  if (/SUPABASE_SECRET_KEY|sb_secret_/.test(body)) {
+    hits.push(
+      `${nextEnv}: contains a Supabase secret key (use wrangler secret)`,
+    );
+  }
+  for (const v of secretValues) {
+    if (body.includes(v))
+      hits.push(`${nextEnv}: contains a known secret value`);
+  }
+}
+
 if (hits.length) {
-  console.error("Server secret found in client output:\n" + hits.join("\n"));
+  console.error(
+    "Secret or local-only setting found in the build:\n" +
+      [...new Set(hits)].join("\n"),
+  );
   process.exit(1);
 }
 console.log(
-  `check:secrets ok (${secretValues.size} known secret values + key patterns checked)`,
+  `check:secrets ok (${secretValues.size} known secret values + key patterns; browser output and server env)`,
 );

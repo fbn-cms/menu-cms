@@ -1,6 +1,7 @@
 import "server-only";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { z } from "zod";
+import { glossaryText } from "./glossary";
 
 // AI help for the dish editor, on Cloudflare Workers AI (free 10,000 neurons/day on the
 // restaurant's own Cloudflare account). The output is a SUGGESTION: it lands in the form for a
@@ -23,7 +24,22 @@ const trText = z.object({
   long_description: z.string().max(4000),
   options: z.array(z.string().max(80)),
 });
-export const translateOutput = z.object({ fa: trText, fr: trText });
+// Open models occasionally slip words from another alphabet into a translation (seen in testing:
+// a Cyrillic word inside Persian). Reject such output so runJson retries.
+const FOREIGN_IN_FA = /[Ѐ-ӿ぀-ヿ一-鿿가-힯]/; // Cyrillic, kana, CJK, Hangul
+const FOREIGN_IN_FR = /[؀-ۿЀ-ӿ぀-ヿ一-鿿가-힯]/; // + Arabic script
+const allText = (t: z.infer<typeof trText>) =>
+  [t.name, t.short_description, t.long_description, ...t.options].join(" ");
+export const translateOutput = z
+  .object({ fa: trText, fr: trText })
+  .refine(
+    (o) => !FOREIGN_IN_FA.test(allText(o.fa)),
+    "Persian contains another alphabet",
+  )
+  .refine(
+    (o) => !FOREIGN_IN_FR.test(allText(o.fr)),
+    "French contains another alphabet",
+  );
 
 export type DescribeInput = {
   name: string;
@@ -53,7 +69,10 @@ Rules:
 - Persian: proper Persian script and punctuation (، ؛), zero-width non-joiner where standard (e.g. "می‌شود"), Western digits.
 - French: Canadian French spelling and typography (space before : ; ! ?), "$" after the amount if a price appears.
 - options: translate each size/option name in the same order; keep numbers.
-- If a field is empty in English, return an empty string for it.`;
+- If a field is empty in English, return an empty string for it.
+- ALWAYS use these fixed terms exactly when the English text contains them (case-insensitive):
+${glossaryText()}
+- Persian numbers MUST use Western digits 0–9 (write "6", never "۶").`;
 
 function schemaOf(shape: "describe" | "translate") {
   const text = {
@@ -169,6 +188,15 @@ export async function translateDish(input: TranslateInput) {
     out[l].options = input.options.map(
       (_, i) => out[l].options[i]?.trim() ?? "",
     );
+  // Safety net for the restaurant's "Western digits in Persian" default (models often ignore it).
+  const westernDigits = (t: string) =>
+    t.replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
+  out.fa = {
+    name: westernDigits(out.fa.name),
+    short_description: westernDigits(out.fa.short_description),
+    long_description: westernDigits(out.fa.long_description),
+    options: out.fa.options.map(westernDigits),
+  };
   return out;
 }
 

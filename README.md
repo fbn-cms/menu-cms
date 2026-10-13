@@ -10,7 +10,7 @@ QR restaurant menu + lightweight CMS. Next.js on Cloudflare Workers, Supabase, R
 
 ```bash
 npm install
-cp .env.example .env.local   # fill in values
+cp .env.example .env.development.local   # dev only (never .env.local)
 npm run dev                  # Next dev server  → http://localhost:3000
 npm run preview              # Workers runtime  → http://localhost:8787
 ```
