@@ -160,6 +160,19 @@ test.describe("86 board", () => {
 });
 
 test.describe("email flows", () => {
+  test("owner can send a team member a password link", async ({ page }) => {
+    await signIn(page, "owner@demo.test");
+    await page.goto("/admin/team");
+    const row = page
+      .getByRole("listitem")
+      .filter({ hasText: "staff@demo.test" });
+    await row.getByRole("button", { name: "Send password link" }).click();
+    await expect(
+      page.getByText("Password link sent to staff@demo.test"),
+    ).toBeVisible();
+    expect(await latestEmailLink("staff@demo.test")).toContain("type=recovery");
+  });
+
   test("owner invites a staff member, who sets a password and lands on the board", async ({
     page,
     browser,

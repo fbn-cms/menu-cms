@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireRole } from "@/lib/auth";
+import { absoluteUrl } from "@/lib/env";
 import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { createSupabaseServer } from "@/lib/supabase/server";
 
@@ -40,15 +41,13 @@ export async function inviteMember(
         : "Couldn't send the invite. Check the email address and try again.",
     };
   }
-  const { error: profileError } = await admin
-    .from("profiles")
-    .insert({
-      id: invited.user.id,
-      restaurant_id: ctx.restaurant.id,
-      email,
-      full_name,
-      role,
-    });
+  const { error: profileError } = await admin.from("profiles").insert({
+    id: invited.user.id,
+    restaurant_id: ctx.restaurant.id,
+    email,
+    full_name,
+    role,
+  });
   if (profileError) {
     await admin.auth.admin.deleteUser(invited.user.id); // don't leave an account without a profile
     return {
@@ -108,4 +107,46 @@ export async function updateMember(input: {
   }
   revalidatePath("/admin/team");
   return { ok: true };
+}
+
+/**
+ * Owner sends a member a "choose a password" email — for an expired invite or a lost password.
+ * Uses the normal recovery email (same template as "Forgot password?").
+ */
+export async function sendPasswordLink(id: string): Promise<TeamResult> {
+  await requireRole("owner");
+  if (!z.uuid().safeParse(id).success)
+    return { ok: false, error: "Invalid input." };
+  const supabase = await createSupabaseServer();
+  const { data: member } = await supabase
+    .from("profiles")
+    .select("email")
+    .eq("id", id)
+    .maybeSingle();
+  if (!member?.email)
+    return { ok: false, error: "That member has no email address." };
+  const { error } = await supabase.auth.resetPasswordForEmail(member.email, {
+    redirectTo: absoluteUrl("/admin/set-password"),
+  });
+  if (error?.status === 429 || /rate_limit/.test(error?.code ?? "")) {
+    return {
+      ok: false,
+      error:
+        "An email was sent to them less than a minute ago. Wait a minute and try again.",
+    };
+  }
+  if (error) {
+    console.error("[team] password link failed", {
+      code: error.code,
+      message: error.message,
+    });
+    return {
+      ok: false,
+      error: "Couldn't send the email. Try again in a few minutes.",
+    };
+  }
+  return {
+    ok: true,
+    message: `Password link sent to ${member.email}. It works for 1 hour.`,
+  };
 }

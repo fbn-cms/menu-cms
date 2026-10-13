@@ -14,6 +14,41 @@ const email = z.email().max(254);
 const SENT =
   "If that email belongs to a team member, a link is on its way. Check your inbox.";
 
+/**
+ * Turn an auth email error into a user-facing result WITHOUT revealing whether the account
+ * exists. "No such user" looks exactly like success; rate limits (Supabase allows one auth
+ * email per address per minute, 30/hour per project) and real failures are shown honestly.
+ */
+function emailResult(
+  error: { status?: number; code?: string; message: string } | null,
+  what: string,
+): FormState {
+  if (!error) return { message: SENT };
+  if (
+    [
+      "otp_disabled",
+      "signup_disabled",
+      "user_not_found",
+      "email_address_not_authorized",
+    ].includes(error.code ?? "")
+  ) {
+    return { message: SENT };
+  }
+  if (error.status === 429 || /rate_limit/.test(error.code ?? "")) {
+    return {
+      error: "Too many emails requested. Wait a minute, then try again.",
+    };
+  }
+  console.error(`[auth] ${what} failed`, {
+    status: error.status,
+    code: error.code,
+    message: error.message,
+  });
+  return {
+    error: "We couldn't send the email right now. Try again in a few minutes.",
+  };
+}
+
 export async function signInWithPassword(
   _: FormState,
   form: FormData,
@@ -52,14 +87,14 @@ export async function sendMagicLink(
   const parsed = email.safeParse(form.get("email"));
   if (!parsed.success) return { error: "Enter a valid email address." };
   const supabase = await createSupabaseServer();
-  await supabase.auth.signInWithOtp({
+  const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data,
     options: {
       shouldCreateUser: false,
       emailRedirectTo: absoluteUrl("/admin"),
     },
   });
-  return { message: SENT };
+  return emailResult(error, "magic link");
 }
 
 export async function sendPasswordReset(
@@ -69,10 +104,10 @@ export async function sendPasswordReset(
   const parsed = email.safeParse(form.get("email"));
   if (!parsed.success) return { error: "Enter a valid email address." };
   const supabase = await createSupabaseServer();
-  await supabase.auth.resetPasswordForEmail(parsed.data, {
+  const { error } = await supabase.auth.resetPasswordForEmail(parsed.data, {
     redirectTo: absoluteUrl("/admin/set-password"),
   });
-  return { message: SENT };
+  return emailResult(error, "password reset");
 }
 
 export async function setPassword(

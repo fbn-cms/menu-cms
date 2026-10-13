@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   inviteMember,
+  sendPasswordLink,
   updateMember,
   type TeamResult,
 } from "@/lib/actions/team";
@@ -88,9 +89,11 @@ type Member = {
 export function MemberRow({
   member,
   isSelf,
+  neverSignedIn,
 }: {
   member: Member;
   isSelf: boolean;
+  neverSignedIn: boolean;
 }) {
   const [pending, start] = useTransition();
   const run = (input: Parameters<typeof updateMember>[0], ok: string) =>
@@ -121,6 +124,27 @@ export function MemberRow({
           {member.role}
         </Badge>
         {!member.is_active && <Badge variant="outline">Deactivated</Badge>}
+        {neverSignedIn && member.is_active && (
+          <Badge variant="outline">Never signed in</Badge>
+        )}
+        {!isSelf && member.is_active && (
+          // For an expired invite or a forgotten password. Works for co-owners too.
+          <Button
+            variant="outline"
+            size="sm"
+            className="min-h-11"
+            disabled={pending}
+            onClick={() =>
+              start(async () => {
+                const res = await sendPasswordLink(member.id);
+                if (res.ok) toast.success(res.message);
+                else toast.error(res.error);
+              })
+            }
+          >
+            Send password link
+          </Button>
+        )}
         {!isSelf && member.role !== "owner" && (
           <>
             <Button

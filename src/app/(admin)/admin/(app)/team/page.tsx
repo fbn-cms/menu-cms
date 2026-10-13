@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { requireRole } from "@/lib/auth";
+import { createSupabaseAdmin } from "@/lib/supabase/admin";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { InviteForm, MemberRow } from "./team-client";
 
@@ -14,6 +15,13 @@ export default async function TeamPage() {
     .order("is_active", { ascending: false })
     .order("role")
     .order("full_name");
+  // Sign-in status lives in auth.users (owner already verified above; read-only use of the secret key).
+  const { data: auth } = await createSupabaseAdmin().auth.admin.listUsers({
+    perPage: 1000,
+  });
+  const lastSignIn = new Map(
+    (auth?.users ?? []).map((u) => [u.id, u.last_sign_in_at ?? null]),
+  );
 
   return (
     <div className="space-y-6">
@@ -35,7 +43,12 @@ export default async function TeamPage() {
         </h2>
         <ul className="divide-y rounded-2xl border">
           {(members ?? []).map((m) => (
-            <MemberRow key={m.id} member={m} isSelf={m.id === ctx.userId} />
+            <MemberRow
+              key={m.id}
+              member={m}
+              isSelf={m.id === ctx.userId}
+              neverSignedIn={!lastSignIn.get(m.id)}
+            />
           ))}
         </ul>
       </section>
