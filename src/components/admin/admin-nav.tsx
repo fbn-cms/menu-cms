@@ -2,15 +2,26 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 export type NavItem = { href: string; label: string };
 
 export function AdminNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
+  const navRef = useRef<HTMLElement>(null);
+
+  // On phones the tabs scroll sideways: keep the current one in view.
+  useEffect(() => {
+    navRef.current
+      ?.querySelector<HTMLElement>('[aria-current="page"]')
+      ?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [pathname]);
+
   if (items.length <= 1) return null; // staff: single screen, no navigation at all
   return (
     <nav
+      ref={navRef}
       aria-label="Admin"
       className="no-scrollbar -mx-4 flex gap-1 overflow-x-auto px-4"
     >

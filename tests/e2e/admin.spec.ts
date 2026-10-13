@@ -79,13 +79,19 @@ test.describe("admin access", () => {
     );
   });
 
-  test("admin sees dashboard and 86 board, not team or audit", async ({
+  test("admin sees the menu editors, not team, settings or audit", async ({
     page,
   }) => {
     await signIn(page, "admin@demo.test");
     await expect(page).toHaveURL(/\/admin$/);
     const nav = page.getByRole("navigation", { name: "Admin" });
-    await expect(nav.getByRole("link")).toHaveText(["Dashboard", "86 board"]);
+    await expect(nav.getByRole("link")).toHaveText([
+      "Dashboard",
+      "86 board",
+      "Dishes",
+      "Categories",
+      "Labels",
+    ]);
     await page.goto("/admin/team");
     await expect(page).toHaveURL(/\/admin$/);
   });
@@ -94,7 +100,16 @@ test.describe("admin access", () => {
     await signIn(page, "owner@demo.test");
     await expect(
       page.getByRole("navigation", { name: "Admin" }).getByRole("link"),
-    ).toHaveText(["Dashboard", "86 board", "Team", "Settings", "Audit log"]);
+    ).toHaveText([
+      "Dashboard",
+      "86 board",
+      "Dishes",
+      "Categories",
+      "Labels",
+      "Team",
+      "Settings",
+      "Audit log",
+    ]);
   });
 });
 

@@ -678,9 +678,42 @@ export type Database = {
         Args: { p_is_bot?: boolean; p_slug: string; p_ua_family?: string };
         Returns: string;
       };
+      reorder_categories: { Args: { p_ids: string[] }; Returns: number };
+      reorder_items: { Args: { p_ids: string[] }; Returns: number };
       reset_all_availability: {
         Args: { p_restaurant_id: string };
         Returns: number;
+      };
+      save_category: {
+        Args: {
+          p_data: Json;
+          p_expected_updated_at?: string;
+          p_id: string;
+          p_restaurant_id: string;
+          p_translations: Json;
+        };
+        Returns: Json;
+      };
+      save_item: {
+        Args: {
+          p_data: Json;
+          p_expected_updated_at?: string;
+          p_id: string;
+          p_restaurant_id: string;
+          p_tag_ids: string[];
+          p_translations: Json;
+          p_variants: Json;
+        };
+        Returns: Json;
+      };
+      save_tag: {
+        Args: {
+          p_data: Json;
+          p_id: string;
+          p_restaurant_id: string;
+          p_translations: Json;
+        };
+        Returns: Json;
       };
       set_item_availability: {
         Args: {
@@ -699,6 +732,10 @@ export type Database = {
           remaining_qty: number;
           updated_at: string;
         }[];
+      };
+      set_items_published: {
+        Args: { p_ids: string[]; p_published: boolean };
+        Returns: number;
       };
     };
     Enums: {
