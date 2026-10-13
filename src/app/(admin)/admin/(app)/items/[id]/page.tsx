@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { aiSummary } from "@/lib/ai/config";
 import { requireRole } from "@/lib/auth";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { ItemForm, type ItemFormValue } from "./item-form";
@@ -45,6 +46,14 @@ export default async function ItemEditPage({
     );
   }
   const currency = r?.currency ?? "CAD";
+  // Which AI "Generate" will use — a label only; keys never leave the server.
+  const ai = await aiSummary(ctx.restaurant.id);
+  const aiLabel =
+    ai.provider === "anthropic"
+      ? `Claude (${ai.anthropic.model})`
+      : ai.provider === "openai"
+        ? `ChatGPT (${ai.openai.model})`
+        : "the free Cloudflare AI";
 
   if (id === "new") {
     const { category } = await searchParams;
@@ -83,6 +92,7 @@ export default async function ItemEditPage({
         categories={categories}
         tags={tags ?? []}
         currency={currency}
+        aiLabel={aiLabel}
       />
     );
   }
@@ -161,6 +171,7 @@ export default async function ItemEditPage({
       categories={categories}
       tags={tags ?? []}
       currency={currency}
+      aiLabel={aiLabel}
     />
   );
 }

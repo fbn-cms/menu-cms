@@ -9,6 +9,57 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ai_settings: {
+        Row: {
+          anthropic_key_enc: string | null;
+          anthropic_key_hint: string | null;
+          anthropic_model: string;
+          created_at: string;
+          openai_key_enc: string | null;
+          openai_key_hint: string | null;
+          openai_model: string;
+          provider: string;
+          restaurant_id: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          anthropic_key_enc?: string | null;
+          anthropic_key_hint?: string | null;
+          anthropic_model?: string;
+          created_at?: string;
+          openai_key_enc?: string | null;
+          openai_key_hint?: string | null;
+          openai_model?: string;
+          provider?: string;
+          restaurant_id: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          anthropic_key_enc?: string | null;
+          anthropic_key_hint?: string | null;
+          anthropic_model?: string;
+          created_at?: string;
+          openai_key_enc?: string | null;
+          openai_key_hint?: string | null;
+          openai_model?: string;
+          provider?: string;
+          restaurant_id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "ai_settings_restaurant_id_fkey";
+            columns: ["restaurant_id"];
+            isOneToOne: true;
+            referencedRelation: "restaurants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       audit_log: {
         Row: {
           action: string;

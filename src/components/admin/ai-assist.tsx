@@ -1,71 +1,94 @@
 "use client";
 
 import { useState } from "react";
-import { Languages, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export type Described = { short_description: string; long_description: string };
-type TrText = {
+export type ComposeLang = "en" | "fa" | "fr";
+type LangText = {
   name: string;
   short_description: string;
   long_description: string;
   options: string[];
 };
-export type Translated = { fa: TrText; fr: TrText };
+export type Composed = Record<ComposeLang, LangText>;
 
-async function callAi<T>(payload: object): Promise<T> {
-  const res = await fetch("/api/admin/ai", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  const body = (await res.json().catch(() => ({}))) as T & { error?: string };
-  if (!res.ok) throw new Error(body.error ?? "AI is unavailable right now.");
-  return body;
-}
+const LANG_NAME: Record<ComposeLang, string> = {
+  en: "English",
+  fa: "Persian",
+  fr: "French",
+};
 
-/** "Write with AI": English short + long description from the name, category and the cook's notes. */
-export function AiDescribe({
+/**
+ * "Generate": from the dish as typed in the CURRENT tab's language, the AI writes any missing
+ * description in that language and fills the other two (names, descriptions, option names).
+ * The result goes into the form for review — nothing is saved until Save.
+ */
+export function AiCompose({
+  source,
   name,
-  category,
+  shortDescription,
+  longDescription,
   options,
-  hasText,
+  category,
+  providerLabel,
   onResult,
 }: {
+  source: ComposeLang;
   name: string;
-  category: string;
+  shortDescription: string;
+  longDescription: string;
   options: string[];
-  hasText: boolean;
-  onResult: (d: Described) => void;
+  category: string;
+  providerLabel: string;
+  onResult: (result: Composed, replaceOthers: boolean) => void;
 }) {
   const [notes, setNotes] = useState("");
+  const [replace, setReplace] = useState(false);
   const [busy, setBusy] = useState(false);
+  const others = (["en", "fa", "fr"] as const)
+    .filter((l) => l !== source)
+    .map((l) => LANG_NAME[l]);
+
   const run = async () => {
     setBusy(true);
     try {
-      onResult(
-        await callAi<Described>({
-          task: "describe",
+      const res = await fetch("/api/admin/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          source,
           name,
-          category,
+          short_description: shortDescription,
+          long_description: longDescription,
           notes,
           options,
+          category,
         }),
-      );
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        result?: Composed;
+        error?: string;
+      };
+      if (!res.ok || !body.result)
+        throw new Error(body.error ?? "AI is unavailable right now.");
+      onResult(body.result, replace);
       toast.success(
-        "Suggestion added below — edit it as you like before saving.",
+        `Done — check the ${others.join(" and ")} tabs before saving.`,
       );
     } catch (e) {
       toast.error(
         e instanceof Error ? e.message : "AI is unavailable right now.",
+        { duration: 8000 },
       );
     } finally {
       setBusy(false);
     }
   };
+
   return (
     <div className="space-y-2 rounded-xl border border-dashed p-3">
       <Label htmlFor="ai-notes" className="text-sm">
@@ -74,12 +97,22 @@ export function AiDescribe({
       </Label>
       <Input
         id="ai-notes"
+        dir="auto"
         value={notes}
         maxLength={500}
         placeholder="e.g. charcoal-grilled, saffron rice, grilled tomato"
         onChange={(e) => setNotes(e.target.value)}
         className="h-11 text-base"
       />
+      <label className="flex min-h-10 items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          checked={replace}
+          onChange={(e) => setReplace(e.target.checked)}
+          className="accent-foreground size-4"
+        />
+        Replace text already written in {others.join(" and ")}
+      </label>
       <div className="flex flex-wrap items-center gap-2">
         <Button
           type="button"
@@ -89,57 +122,13 @@ export function AiDescribe({
           onClick={() => void run()}
         >
           <Sparkles aria-hidden="true" className="size-4" />
-          {busy ? "Writing…" : hasText ? "Rewrite with AI" : "Write with AI"}
+          {busy ? "Generating…" : `Generate from ${LANG_NAME[source]}`}
         </Button>
         <p className="text-muted-foreground text-xs">
-          Uses only what you tell it — check allergens yourself.
+          Writes missing descriptions and fills {others.join(" & ")}. Using{" "}
+          {providerLabel}. Check allergens yourself.
         </p>
       </div>
     </div>
-  );
-}
-
-/** "Translate": fills Persian + French from the English text, for a person to check. */
-export function AiTranslate({
-  source,
-  onResult,
-  disabled,
-}: {
-  source: {
-    name: string;
-    short_description: string;
-    long_description: string;
-    options: string[];
-  };
-  onResult: (t: Translated) => void;
-  disabled?: boolean;
-}) {
-  const [busy, setBusy] = useState(false);
-  const run = async () => {
-    setBusy(true);
-    try {
-      onResult(await callAi<Translated>({ task: "translate", ...source }));
-      toast.success(
-        "Persian and French filled in — please check them before saving.",
-      );
-    } catch (e) {
-      toast.error(
-        e instanceof Error ? e.message : "AI is unavailable right now.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  };
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      className="h-11"
-      disabled={busy || disabled || !source.name.trim()}
-      onClick={() => void run()}
-    >
-      <Languages aria-hidden="true" className="size-4" />
-      {busy ? "Translating…" : "Translate to Persian & French"}
-    </Button>
   );
 }

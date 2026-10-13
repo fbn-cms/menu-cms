@@ -6,9 +6,9 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { ChevronLeft, ExternalLink, Flame, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  AiDescribe,
-  AiTranslate,
-  type Translated,
+  AiCompose,
+  type Composed,
+  type ComposeLang,
 } from "@/components/admin/ai-assist";
 import { ConfirmDelete } from "@/components/admin/confirm-delete";
 import { ImageField } from "@/components/admin/image-field";
@@ -63,12 +63,14 @@ export function ItemForm({
   categories,
   tags,
   currency,
+  aiLabel,
 }: {
   initial: ItemFormValue;
   isNew: boolean;
   categories: { id: string; name: string }[];
   tags: Tag[];
   currency: string;
+  aiLabel: string;
 }) {
   const router = useRouter();
   const [v, setV] = useState(initial);
@@ -83,7 +85,8 @@ export function ItemForm({
   );
   const [saving, start] = useTransition();
   // Languages last filled by machine translation and not yet reviewed (UI only, never saved).
-  const [machine, setMachine] = useState<{ fa: boolean; fr: boolean }>({
+  const [machine, setMachine] = useState<Record<ComposeLang, boolean>>({
+    en: false,
     fa: false,
     fr: false,
   });
@@ -113,6 +116,7 @@ export function ItemForm({
       : v.translations[lang];
   const setText = (patch: Partial<Tr>) =>
     setV((cur) => {
+      setMachine((m) => ({ ...m, [lang]: false })); // edited by a person → reviewed
       if (lang === "en") {
         const name = patch.name ?? cur.name;
         return {
@@ -123,7 +127,6 @@ export function ItemForm({
           slug: slugTouched ? cur.slug : slugify(name),
         };
       }
-      setMachine((m) => ({ ...m, [lang]: false })); // edited by a person → reviewed
       return {
         ...cur,
         translations: {
@@ -133,32 +136,89 @@ export function ItemForm({
       };
     });
 
-  const applyTranslation = (t: Translated) => {
-    setV((cur) => ({
-      ...cur,
-      translations: {
-        fa: {
-          name: t.fa.name,
-          short_description: t.fa.short_description,
-          long_description: t.fa.long_description,
-        },
-        fr: {
-          name: t.fr.name,
-          short_description: t.fr.short_description,
-          long_description: t.fr.long_description,
-        },
-      },
-      variants: cur.variants.map((x, i) => ({
-        ...x,
+  // Merge AI output: fill empty fields (or everything in the other languages if asked to
+  // replace). The cook's own text in the source language is never touched.
+  const applyCompose = (
+    r: Composed,
+    source: ComposeLang,
+    replaceOthers: boolean,
+  ) => {
+    const touched: Record<ComposeLang, boolean> = {
+      en: false,
+      fa: false,
+      fr: false,
+    };
+    const pick = (l: ComposeLang, current: string, next: string) => {
+      const write =
+        next &&
+        (l === source ? !current.trim() : replaceOthers || !current.trim());
+      if (write && next !== current) touched[l] = true;
+      return write ? next : current;
+    };
+    setV((cur) => {
+      const name = pick("en", cur.name, r.en.name);
+      return {
+        ...cur,
+        name,
+        slug: slugTouched || cur.slug ? cur.slug : slugify(name),
+        shortDescription: pick(
+          "en",
+          cur.shortDescription,
+          r.en.short_description,
+        ),
+        longDescription: pick("en", cur.longDescription, r.en.long_description),
         translations: {
-          fa: t.fa.options[i] ?? x.translations.fa,
-          fr: t.fr.options[i] ?? x.translations.fr,
+          fa: {
+            name: pick("fa", cur.translations.fa.name, r.fa.name),
+            short_description: pick(
+              "fa",
+              cur.translations.fa.short_description,
+              r.fa.short_description,
+            ),
+            long_description: pick(
+              "fa",
+              cur.translations.fa.long_description,
+              r.fa.long_description,
+            ),
+          },
+          fr: {
+            name: pick("fr", cur.translations.fr.name, r.fr.name),
+            short_description: pick(
+              "fr",
+              cur.translations.fr.short_description,
+              r.fr.short_description,
+            ),
+            long_description: pick(
+              "fr",
+              cur.translations.fr.long_description,
+              r.fr.long_description,
+            ),
+          },
         },
-      })),
+        variants: cur.variants.map((x, i) => ({
+          ...x,
+          name: pick("en", x.name, r.en.options[i] ?? ""),
+          translations: {
+            fa: pick("fa", x.translations.fa, r.fa.options[i] ?? ""),
+            fr: pick("fr", x.translations.fr, r.fr.options[i] ?? ""),
+          },
+        })),
+      };
+    });
+    setMachine((m) => ({
+      en: m.en || touched.en,
+      fa: m.fa || touched.fa,
+      fr: m.fr || touched.fr,
     }));
-    setMachine({ fa: true, fr: true });
-    setLang("fa");
+    const next = (["en", "fa", "fr"] as const).find(
+      (l) => l !== source && touched[l],
+    );
+    if (next) setLang(next);
   };
+  // Text of the current tab's language, as the AI's source.
+  const sourceOptions = v.variants.map((x) =>
+    lang === "en" ? x.name : x.translations[lang] || x.name,
+  );
   const missing = {
     en: !v.name.trim(),
     fa:
@@ -281,33 +341,27 @@ export function ItemForm({
           </h2>
           <LanguageTabs value={lang} onChange={setLang} missing={missing} />
         </div>
-        {lang === "en" ? (
-          <AiDescribe
-            name={v.name}
-            category={categories.find((c) => c.id === v.categoryId)?.name ?? ""}
-            options={v.variants.map((x) => x.name).filter(Boolean)}
-            hasText={!!(v.shortDescription || v.longDescription)}
-            onResult={(d) =>
-              setV((cur) => ({
-                ...cur,
-                shortDescription: d.short_description,
-                longDescription: d.long_description,
-              }))
-            }
-          />
-        ) : (
+        <AiCompose
+          source={lang}
+          name={text.name}
+          shortDescription={text.short_description}
+          longDescription={text.long_description}
+          options={sourceOptions}
+          category={categories.find((c) => c.id === v.categoryId)?.name ?? ""}
+          providerLabel={aiLabel}
+          onResult={(r, replaceOthers) => applyCompose(r, lang, replaceOthers)}
+        />
+        {lang !== "en" && (
           <p className="text-muted-foreground text-xs">
             Empty fields show the English text to guests.
           </p>
         )}
-        {lang !== "en" && machine[lang] && (
+        {machine[lang] && (
           <div
             role="status"
             className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-amber-100 px-3 py-2 text-sm text-amber-950"
           >
-            <span>
-              Machine-translated — please read it through before saving.
-            </span>
+            <span>Written by AI — please read it through before saving.</span>
             <button
               type="button"
               className="min-h-11 font-medium underline underline-offset-4"
@@ -360,22 +414,6 @@ export function ItemForm({
             onChange={(e) => setText({ long_description: e.target.value })}
             className="text-base"
           />
-        </div>
-        <div className="flex flex-wrap items-center gap-2 border-t pt-3">
-          <AiTranslate
-            disabled={!v.shortDescription && !v.longDescription && !v.name}
-            source={{
-              name: v.name,
-              short_description: v.shortDescription,
-              long_description: v.longDescription,
-              options: v.variants.map((x) => x.name),
-            }}
-            onResult={applyTranslation}
-          />
-          <p className="text-muted-foreground text-xs">
-            Fills the FA and FR tabs (and option names) from the English.
-            Nothing is saved until you press Save.
-          </p>
         </div>
       </section>
 
