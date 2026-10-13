@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { ChevronLeft, ExternalLink, Flame, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  AiDescribe,
+  AiTranslate,
+  type Translated,
+} from "@/components/admin/ai-assist";
 import { ConfirmDelete } from "@/components/admin/confirm-delete";
 import { ImageField } from "@/components/admin/image-field";
 import {
@@ -27,6 +32,7 @@ type Variant = {
   name: string;
   priceCents: number;
   availability: "available" | "limited" | "unavailable";
+  translations: { fa: string; fr: string };
 };
 export type ItemFormValue = Omit<
   ItemInput,
@@ -76,6 +82,11 @@ export function ItemForm({
     initial.variants.map((x) => centsToInput(x.priceCents)),
   );
   const [saving, start] = useTransition();
+  // Languages last filled by machine translation and not yet reviewed (UI only, never saved).
+  const [machine, setMachine] = useState<{ fa: boolean; fr: boolean }>({
+    fa: false,
+    fr: false,
+  });
   const set = (patch: Partial<ItemFormValue>) =>
     setV((cur) => ({ ...cur, ...patch }));
 
@@ -112,6 +123,7 @@ export function ItemForm({
           slug: slugTouched ? cur.slug : slugify(name),
         };
       }
+      setMachine((m) => ({ ...m, [lang]: false })); // edited by a person → reviewed
       return {
         ...cur,
         translations: {
@@ -120,6 +132,33 @@ export function ItemForm({
         },
       };
     });
+
+  const applyTranslation = (t: Translated) => {
+    setV((cur) => ({
+      ...cur,
+      translations: {
+        fa: {
+          name: t.fa.name,
+          short_description: t.fa.short_description,
+          long_description: t.fa.long_description,
+        },
+        fr: {
+          name: t.fr.name,
+          short_description: t.fr.short_description,
+          long_description: t.fr.long_description,
+        },
+      },
+      variants: cur.variants.map((x, i) => ({
+        ...x,
+        translations: {
+          fa: t.fa.options[i] ?? x.translations.fa,
+          fr: t.fr.options[i] ?? x.translations.fr,
+        },
+      })),
+    }));
+    setMachine({ fa: true, fr: true });
+    setLang("fa");
+  };
   const missing = {
     en: !v.name.trim(),
     fa:
@@ -242,10 +281,41 @@ export function ItemForm({
           </h2>
           <LanguageTabs value={lang} onChange={setLang} missing={missing} />
         </div>
-        {lang !== "en" && (
+        {lang === "en" ? (
+          <AiDescribe
+            name={v.name}
+            category={categories.find((c) => c.id === v.categoryId)?.name ?? ""}
+            options={v.variants.map((x) => x.name).filter(Boolean)}
+            hasText={!!(v.shortDescription || v.longDescription)}
+            onResult={(d) =>
+              setV((cur) => ({
+                ...cur,
+                shortDescription: d.short_description,
+                longDescription: d.long_description,
+              }))
+            }
+          />
+        ) : (
           <p className="text-muted-foreground text-xs">
             Empty fields show the English text to guests.
           </p>
+        )}
+        {lang !== "en" && machine[lang] && (
+          <div
+            role="status"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-amber-100 px-3 py-2 text-sm text-amber-950"
+          >
+            <span>
+              Machine-translated — please read it through before saving.
+            </span>
+            <button
+              type="button"
+              className="min-h-11 font-medium underline underline-offset-4"
+              onClick={() => setMachine((m) => ({ ...m, [lang]: false }))}
+            >
+              Looks good
+            </button>
+          </div>
         )}
         <div className="space-y-1.5">
           <Label htmlFor="name">Name{lang === "en" && " (required)"}</Label>
@@ -290,6 +360,22 @@ export function ItemForm({
             onChange={(e) => setText({ long_description: e.target.value })}
             className="text-base"
           />
+        </div>
+        <div className="flex flex-wrap items-center gap-2 border-t pt-3">
+          <AiTranslate
+            disabled={!v.shortDescription && !v.longDescription && !v.name}
+            source={{
+              name: v.name,
+              short_description: v.shortDescription,
+              long_description: v.longDescription,
+              options: v.variants.map((x) => x.name),
+            }}
+            onResult={applyTranslation}
+          />
+          <p className="text-muted-foreground text-xs">
+            Fills the FA and FR tabs (and option names) from the English.
+            Nothing is saved until you press Save.
+          </p>
         </div>
       </section>
 
@@ -437,73 +523,121 @@ export function ItemForm({
         {v.variants.map((x, i) => (
           <div
             key={x.id ?? `new-${i}`}
-            className="grid grid-cols-[1fr_6.5rem_auto] items-end gap-2 sm:grid-cols-[1fr_7rem_9rem_auto]"
+            className="space-y-2 rounded-xl border p-2"
           >
-            <div className="space-y-1">
-              <Label htmlFor={`vn-${i}`} className="text-xs">
-                Option name
-              </Label>
-              <Input
-                id={`vn-${i}`}
-                value={x.name}
-                maxLength={80}
-                onChange={(e) => updateVariant(i, { name: e.target.value })}
-                className="h-11 text-base"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor={`vp-${i}`} className="text-xs">
-                Price
-              </Label>
-              <Input
-                id={`vp-${i}`}
-                inputMode="decimal"
-                value={variantPrices[i] ?? ""}
-                aria-invalid={
-                  parsePriceToCents(variantPrices[i] ?? "") === null
-                }
-                onChange={(e) => {
-                  setVariantPrices((ps) =>
-                    ps.map((p, k) => (k === i ? e.target.value : p)),
-                  );
-                  const c = parsePriceToCents(e.target.value);
-                  if (c !== null) updateVariant(i, { priceCents: c });
+            <div className="grid grid-cols-[1fr_6.5rem_auto] items-end gap-2 sm:grid-cols-[1fr_7rem_9rem_auto]">
+              <div className="space-y-1">
+                <Label htmlFor={`vn-${i}`} className="text-xs">
+                  Option name
+                </Label>
+                <Input
+                  id={`vn-${i}`}
+                  value={x.name}
+                  maxLength={80}
+                  onChange={(e) => updateVariant(i, { name: e.target.value })}
+                  className="h-11 text-base"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor={`vp-${i}`} className="text-xs">
+                  Price
+                </Label>
+                <Input
+                  id={`vp-${i}`}
+                  inputMode="decimal"
+                  value={variantPrices[i] ?? ""}
+                  aria-invalid={
+                    parsePriceToCents(variantPrices[i] ?? "") === null
+                  }
+                  onChange={(e) => {
+                    setVariantPrices((ps) =>
+                      ps.map((p, k) => (k === i ? e.target.value : p)),
+                    );
+                    const c = parsePriceToCents(e.target.value);
+                    if (c !== null) updateVariant(i, { priceCents: c });
+                  }}
+                  className="h-11 text-base tabular-nums"
+                />
+              </div>
+              <div className="hidden space-y-1 sm:block">
+                <Label htmlFor={`va-${i}`} className="text-xs">
+                  Availability
+                </Label>
+                <select
+                  id={`va-${i}`}
+                  value={x.availability}
+                  onChange={(e) =>
+                    updateVariant(i, {
+                      availability: e.target.value as Variant["availability"],
+                    })
+                  }
+                  className="bg-background h-11 w-full rounded-md border px-2 text-sm"
+                >
+                  <option value="available">Available</option>
+                  <option value="limited">Limited</option>
+                  <option value="unavailable">Sold out</option>
+                </select>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-11"
+                aria-label={`Remove option ${x.name || i + 1}`}
+                onClick={() => {
+                  set({ variants: v.variants.filter((_, k) => k !== i) });
+                  setVariantPrices((ps) => ps.filter((_, k) => k !== i));
                 }}
-                className="h-11 text-base tabular-nums"
-              />
-            </div>
-            <div className="hidden space-y-1 sm:block">
-              <Label htmlFor={`va-${i}`} className="text-xs">
-                Availability
-              </Label>
-              <select
-                id={`va-${i}`}
-                value={x.availability}
-                onChange={(e) =>
-                  updateVariant(i, {
-                    availability: e.target.value as Variant["availability"],
-                  })
-                }
-                className="bg-background h-11 w-full rounded-md border px-2 text-sm"
               >
-                <option value="available">Available</option>
-                <option value="limited">Limited</option>
-                <option value="unavailable">Sold out</option>
-              </select>
+                <Trash2 aria-hidden="true" className="size-4" />
+              </Button>
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-11"
-              aria-label={`Remove option ${x.name || i + 1}`}
-              onClick={() => {
-                set({ variants: v.variants.filter((_, k) => k !== i) });
-                setVariantPrices((ps) => ps.filter((_, k) => k !== i));
-              }}
-            >
-              <Trash2 aria-hidden="true" className="size-4" />
-            </Button>
+            {/* Option name in the other languages (empty → English is shown) */}
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label
+                  htmlFor={`vfa-${i}`}
+                  className="text-muted-foreground text-xs"
+                >
+                  Persian name
+                </Label>
+                <Input
+                  id={`vfa-${i}`}
+                  dir="rtl"
+                  lang="fa"
+                  value={x.translations.fa}
+                  maxLength={80}
+                  placeholder={x.name}
+                  onChange={(e) =>
+                    updateVariant(i, {
+                      translations: { ...x.translations, fa: e.target.value },
+                    })
+                  }
+                  className="h-10 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label
+                  htmlFor={`vfr-${i}`}
+                  className="text-muted-foreground text-xs"
+                >
+                  French name
+                </Label>
+                <Input
+                  id={`vfr-${i}`}
+                  lang="fr"
+                  value={x.translations.fr}
+                  maxLength={80}
+                  placeholder={x.name}
+                  onChange={(e) =>
+                    updateVariant(i, {
+                      translations: { ...x.translations, fr: e.target.value },
+                    })
+                  }
+                  className="h-10 text-sm"
+                />
+              </div>
+            </div>
           </div>
         ))}
         <Button
@@ -520,6 +654,7 @@ export function ItemForm({
                   name: "",
                   priceCents: v.priceCents,
                   availability: "available",
+                  translations: { fa: "", fr: "" },
                 },
               ],
             });

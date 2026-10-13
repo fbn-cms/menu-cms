@@ -108,6 +108,9 @@ const itemInput = z.object({
           .max(80),
         priceCents: z.number().int().min(0).max(10_000_000),
         availability: z.enum(["available", "limited", "unavailable"]),
+        translations: z
+          .object({ fa: optText(80), fr: optText(80) })
+          .default({ fa: "", fr: "" }),
       }),
     )
     .max(20),
@@ -165,6 +168,7 @@ export async function saveItem(raw: ItemInput): Promise<CmsResult> {
       price_delta_cents: x.priceCents - v.priceCents,
       availability: x.availability,
       sort_order: i + 1,
+      translations: x.translations,
     })),
     p_expected_updated_at: v.expectedUpdatedAt ?? undefined,
   });

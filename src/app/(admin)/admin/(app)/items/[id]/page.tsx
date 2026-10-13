@@ -108,6 +108,17 @@ export default async function ItemEditPage({
         .order("sort_order"),
     ]);
   if (!item) notFound();
+  const { data: vt } = variants?.length
+    ? await supabase
+        .from("item_variant_translations")
+        .select("variant_id, locale, name")
+        .in(
+          "variant_id",
+          variants.map((x) => x.id),
+        )
+    : { data: [] };
+  const vName = (id: string, l: "fa" | "fr") =>
+    vt?.find((r) => r.variant_id === id && r.locale === l)?.name ?? "";
   const t = (l: "fa" | "fr") => {
     const row = tr?.find((x) => x.locale === l);
     return {
@@ -140,6 +151,7 @@ export default async function ItemEditPage({
       name: x.name,
       priceCents: item.price_cents + x.price_delta_cents,
       availability: x.availability,
+      translations: { fa: vName(x.id, "fa"), fr: vName(x.id, "fr") },
     })),
   };
   return (
