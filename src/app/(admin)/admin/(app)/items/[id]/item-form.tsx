@@ -598,18 +598,16 @@ export function ItemForm({
           Show this dish on the menu
         </label>
         <p className="text-muted-foreground ps-8 text-xs">
-          Unticked = hidden completely (e.g. seasonal). To mark it sold out for
-          today, use the 86 board instead.
+          Unticked = hidden completely (e.g. seasonal). To mark it sold out — or
+          as today’s Chef’s pick — use the{" "}
+          <Link
+            href="/admin/availability"
+            className="underline underline-offset-4"
+          >
+            86 board
+          </Link>
+          .
         </p>
-        <label className="flex min-h-11 items-center gap-3">
-          <input
-            type="checkbox"
-            checked={v.isFeatured}
-            onChange={(e) => set({ isFeatured: e.target.checked })}
-            className="accent-foreground size-5"
-          />
-          Feature it (shows “Chef’s pick”)
-        </label>
         <div className="space-y-1.5 pt-2">
           <Label htmlFor="slug">Web address</Label>
           <div className="text-muted-foreground flex items-center gap-1 text-sm">

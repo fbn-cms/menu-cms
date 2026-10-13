@@ -158,6 +158,63 @@ test.describe("86 board", () => {
     ).not.toBe("0");
   });
 
+  test("staff toggle Chef's pick on the 86 board; an open menu shows it live", async ({
+    page,
+    browser,
+  }) => {
+    sql("update items set is_featured=false where slug='joojeh-kebab'");
+    const diner = await browser.newPage();
+    try {
+      await diner.goto("/en/menu");
+      await expect(diner.locator("[data-live]")).toHaveAttribute(
+        "data-live",
+        "live",
+        { timeout: 15_000 },
+      );
+      const dish = diner.locator("a", {
+        has: diner.getByRole("heading", { name: "Joojeh Kebab" }),
+      });
+      await expect(dish.getByText("Chef's pick")).toHaveCount(0);
+
+      await signIn(page, "staff@demo.test");
+      const toggle = page.getByRole("button", {
+        name: "Joojeh Kebab: Chef's pick",
+      });
+      await expect(toggle).toHaveAttribute("aria-pressed", "false");
+      await toggle.click(); // one tap
+      await expect(toggle).toHaveAttribute("aria-pressed", "true");
+      await expect
+        .poll(() =>
+          sql("select is_featured from items where slug='joojeh-kebab'"),
+        )
+        .toBe("t");
+      await expect(dish.getByText("Chef's pick")).toBeVisible({
+        timeout: 10_000,
+      }); // live, no reload
+
+      await toggle.click();
+      await expect(toggle).toHaveAttribute("aria-pressed", "false");
+      await expect(dish.getByText("Chef's pick")).toHaveCount(0, {
+        timeout: 10_000,
+      });
+    } finally {
+      await diner.close();
+      sql("update items set is_featured=false where slug='joojeh-kebab'");
+    }
+  });
+
+  test("the dish editor no longer has a Chef's pick switch", async ({
+    page,
+  }) => {
+    await signIn(page, "admin@demo.test");
+    const id = sql("select id from items where slug='koobideh-kebab'");
+    await page.goto(`/admin/items/${id}`);
+    await expect(page.getByText("Feature it")).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: "86 board" }).last(),
+    ).toBeVisible();
+  });
+
   test("a stale write is refused instead of overwriting", async ({ page }) => {
     await signIn(page, "staff@demo.test");
     const row = page.getByRole("listitem").filter({ hasText: "Joojeh Kebab" });

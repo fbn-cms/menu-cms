@@ -64,7 +64,6 @@ export default async function ItemEditPage({
       prepMinutes: null,
       calories: null,
       spiceLevel: 0,
-      isFeatured: false,
       isPublished: true,
       iconKey: null,
       iconLqip: null,
@@ -93,7 +92,7 @@ export default async function ItemEditPage({
       supabase
         .from("items")
         .select(
-          "id, category_id, name, slug, short_description, long_description, price_cents, prep_minutes, calories, spice_level, is_featured, is_published, icon_key, icon_lqip, hero_key, hero_lqip, updated_at",
+          "id, category_id, name, slug, short_description, long_description, price_cents, prep_minutes, calories, spice_level, is_published, icon_key, icon_lqip, hero_key, hero_lqip, updated_at",
         )
         .eq("id", id)
         .maybeSingle(),
@@ -129,7 +128,6 @@ export default async function ItemEditPage({
     prepMinutes: item.prep_minutes,
     calories: item.calories,
     spiceLevel: item.spice_level,
-    isFeatured: item.is_featured,
     isPublished: item.is_published,
     iconKey: item.icon_key,
     iconLqip: item.icon_lqip,

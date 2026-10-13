@@ -103,6 +103,7 @@ export const availabilityPatchSchema = z.object({
   availability_note: z.string().nullable(),
   remaining_qty: z.number().int().nullable(),
   availability_until: z.string().nullable(),
+  is_featured: z.boolean().optional(), // Chef's pick, toggled on the 86 board
 });
 
 export type Menu = z.infer<typeof menuSchema>;

@@ -17,7 +17,7 @@ export default async function AvailabilityPage() {
     supabase
       .from("items")
       .select(
-        "id, name, category_id, sort_order, availability, availability_note, remaining_qty, availability_until, updated_at",
+        "id, name, category_id, sort_order, availability, availability_note, remaining_qty, availability_until, is_featured, updated_at",
       )
       .eq("is_published", true)
       .order("sort_order")

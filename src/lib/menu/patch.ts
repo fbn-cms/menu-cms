@@ -16,7 +16,8 @@ export function parseAvailabilityPatch(
     !STATES.has(p.availability) ||
     !strOrNull(p.availability_note) ||
     !strOrNull(p.availability_until) ||
-    !(p.remaining_qty === null || Number.isInteger(p.remaining_qty))
+    !(p.remaining_qty === null || Number.isInteger(p.remaining_qty)) ||
+    !(p.is_featured === undefined || typeof p.is_featured === "boolean")
   ) {
     return null;
   }

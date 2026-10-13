@@ -2,7 +2,14 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Ban, CircleCheck, Hourglass, RotateCcw, Search } from "lucide-react";
+import {
+  Ban,
+  ChefHat,
+  CircleCheck,
+  Hourglass,
+  RotateCcw,
+  Search,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -30,12 +37,13 @@ import type { UntilPreset } from "@/lib/availability/until";
 import {
   resetAllAvailability,
   setAvailability,
+  setFeatured,
   type BoardRow,
 } from "@/lib/actions/availability";
 import { cn } from "@/lib/utils";
 
 type State = BoardRow["availability"];
-type Item = BoardRow & { name: string };
+type Item = BoardRow & { name: string; is_featured: boolean };
 export type BoardCategory = { id: string; name: string; items: Item[] };
 
 const STATES: {
@@ -147,6 +155,34 @@ export function Board({
     return res.ok;
   };
 
+  // Chef's pick: one tap, optimistic, independent of availability.
+  const toggleFeatured = async (item: Item) => {
+    const next = !item.is_featured;
+    setRows((m) => new Map(m).set(item.id, { ...item, is_featured: next }));
+    const res = await setFeatured({
+      itemId: item.id,
+      featured: next,
+      expectedUpdatedAt: item.updated_at,
+    });
+    if (res.ok) {
+      setRows((m) =>
+        new Map(m).set(item.id, {
+          ...item,
+          is_featured: res.isFeatured,
+          updated_at: res.updatedAt,
+        }),
+      );
+    } else {
+      setRows((m) => new Map(m).set(item.id, item));
+      toast.error(
+        res.conflict
+          ? `${item.name}: ${res.error} Pull down to refresh.`
+          : res.error,
+      );
+      if (res.conflict) router.refresh();
+    }
+  };
+
   const onTap = (item: Item, state: State) => {
     if (state === item.availability && state === "available") return;
     // Open the optional-details sheet straight away, but close it if the save is refused
@@ -213,7 +249,11 @@ export function Board({
         <section key={category.id} aria-labelledby={`cat-${category.id}`}>
           <h2
             id={`cat-${category.id}`}
-            className="bg-background/95 text-muted-foreground sticky top-[7.5rem] z-10 -mx-4 px-4 py-2 text-sm font-semibold tracking-wide uppercase backdrop-blur"
+            // Sticks right under the admin header, which is shorter for staff (no nav row).
+            className={cn(
+              "bg-background/95 text-muted-foreground sticky z-10 -mx-4 px-4 py-2 text-sm font-semibold tracking-wide uppercase backdrop-blur",
+              canReset ? "top-[7.5rem]" : "top-[4.5rem]",
+            )}
           >
             {category.name}
           </h2>
@@ -263,32 +303,50 @@ export function Board({
                           .join(" · ")}
                       </p>
                     )}
-                  <div
-                    role="radiogroup"
-                    aria-label={`${item.name} availability`}
-                    className="mt-3 grid grid-cols-3 gap-2"
-                  >
-                    {STATES.map((s) => {
-                      const on = item.availability === s.value;
-                      return (
-                        <button
-                          key={s.value}
-                          type="button"
-                          role="radio"
-                          aria-checked={on}
-                          onClick={() => onTap(item, s.value)}
-                          className={cn(
-                            "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl border-2 text-sm font-semibold transition-colors",
-                            on
-                              ? s.on
-                              : "border-border bg-background text-foreground active:bg-muted",
-                          )}
-                        >
-                          <s.icon aria-hidden="true" className="size-5" />
-                          {s.label}
-                        </button>
-                      );
-                    })}
+                  <div className="mt-3 grid grid-cols-4 gap-2">
+                    <div
+                      role="radiogroup"
+                      aria-label={`${item.name} availability`}
+                      className="col-span-3 grid grid-cols-3 gap-2"
+                    >
+                      {STATES.map((s) => {
+                        const on = item.availability === s.value;
+                        return (
+                          <button
+                            key={s.value}
+                            type="button"
+                            role="radio"
+                            aria-checked={on}
+                            onClick={() => onTap(item, s.value)}
+                            className={cn(
+                              "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl border-2 text-xs font-semibold transition-colors sm:text-sm",
+                              on
+                                ? s.on
+                                : "border-border bg-background text-foreground active:bg-muted",
+                            )}
+                          >
+                            <s.icon aria-hidden="true" className="size-5" />
+                            {s.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* 4th button: today's Chef's pick (pink), toggled independently. */}
+                    <button
+                      type="button"
+                      aria-pressed={item.is_featured}
+                      aria-label={`${item.name}: Chef's pick`}
+                      onClick={() => void toggleFeatured(item)}
+                      className={cn(
+                        "flex min-h-14 flex-col items-center justify-center gap-0.5 rounded-xl border-2 px-1 text-center text-xs leading-tight font-semibold transition-colors sm:text-sm",
+                        item.is_featured
+                          ? "border-pink-600 bg-pink-600 text-white"
+                          : "bg-background border-pink-300 text-pink-700 active:bg-pink-50",
+                      )}
+                    >
+                      <ChefHat aria-hidden="true" className="size-5" />
+                      Chef&apos;s pick
+                    </button>
                   </div>
                 </li>
               );

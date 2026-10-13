@@ -233,6 +233,39 @@ export type Database = {
           },
         ];
       };
+      item_variant_translations: {
+        Row: {
+          created_at: string;
+          locale: string;
+          name: string | null;
+          updated_at: string;
+          variant_id: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          locale: string;
+          name?: string | null;
+          updated_at?: string;
+          variant_id: string;
+        };
+        Update: {
+          created_at?: string;
+          locale?: string;
+          name?: string | null;
+          updated_at?: string;
+          variant_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "item_variant_translations_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "item_variants";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       item_variants: {
         Row: {
           availability: Database["public"]["Enums"]["availability_state"];
@@ -730,6 +763,18 @@ export type Database = {
           availability_until: string;
           id: string;
           remaining_qty: number;
+          updated_at: string;
+        }[];
+      };
+      set_item_featured: {
+        Args: {
+          p_expected_updated_at?: string;
+          p_featured: boolean;
+          p_item_id: string;
+        };
+        Returns: {
+          id: string;
+          is_featured: boolean;
           updated_at: string;
         }[];
       };

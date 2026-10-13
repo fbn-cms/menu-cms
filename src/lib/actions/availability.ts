@@ -102,3 +102,45 @@ export async function resetAllAvailability(): Promise<{
   revalidateTag(menuTag(ctx.restaurant.slug), { expire: 0 });
   return { ok: true, count: data ?? 0 };
 }
+
+/** 86 board: toggle "Chef's pick". Owner, admin and staff (the RPC re-checks the role). */
+export async function setFeatured(input: {
+  itemId: string;
+  featured: boolean;
+  expectedUpdatedAt?: string | null;
+}): Promise<
+  | { ok: true; isFeatured: boolean; updatedAt: string }
+  | { ok: false; error: string; conflict?: boolean }
+> {
+  const parsed = z
+    .object({
+      itemId: z.uuid(),
+      featured: z.boolean(),
+      expectedUpdatedAt: z.string().nullish(),
+    })
+    .safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Invalid input." };
+  const ctx = await getStaffContext();
+  const supabase = await createSupabaseServer();
+  const { data, error } = await supabase
+    .rpc("set_item_featured", {
+      p_item_id: parsed.data.itemId,
+      p_featured: parsed.data.featured,
+      p_expected_updated_at: parsed.data.expectedUpdatedAt ?? undefined,
+    })
+    .single();
+  if (error) {
+    if (error.code === "40001")
+      return {
+        ok: false,
+        conflict: true,
+        error: "Someone else just changed this dish.",
+      };
+    return {
+      ok: false,
+      error: "Couldn't save. Check your connection and try again.",
+    };
+  }
+  revalidateTag(menuTag(ctx.restaurant.slug), { expire: 0 });
+  return { ok: true, isFeatured: data.is_featured, updatedAt: data.updated_at };
+}

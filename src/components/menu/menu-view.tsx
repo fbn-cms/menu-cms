@@ -104,6 +104,7 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
               p.availability === "available" ? null : p.availability_note,
             remaining_qty:
               p.availability === "limited" ? p.remaining_qty : null,
+            is_featured: p.is_featured ?? item.is_featured,
           };
         }),
       ),
