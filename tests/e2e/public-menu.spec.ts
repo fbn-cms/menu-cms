@@ -39,6 +39,30 @@ test.describe("public menu", () => {
     await expect(soup.getByText("Sold out today")).toBeVisible();
   });
 
+  test("each dish shows a decorative availability dot in the matching colour", async ({
+    page,
+  }) => {
+    await page.goto("/en/menu");
+    const classes = {
+      available: "bg-emerald-500",
+      limited: "bg-amber-400",
+      unavailable: "bg-red-600",
+    };
+    const rendered = new Set<string>();
+    for (const [state, cls] of Object.entries(classes)) {
+      const dot = page
+        .locator(`a[data-availability="${state}"]`)
+        .first()
+        .getByTestId("availability-dot");
+      await expect(dot).toHaveAttribute("aria-hidden", "true"); // the text badge carries the meaning
+      await expect(dot).toHaveClass(new RegExp(cls));
+      rendered.add(
+        await dot.evaluate((el) => getComputedStyle(el).backgroundColor),
+      );
+    }
+    expect(rendered.size).toBe(3); // three visibly different colours
+  });
+
   test("sold-out item stays visible and its page says so at the top", async ({
     page,
   }) => {
@@ -131,6 +155,18 @@ test.describe("Persian (RTL)", () => {
         ),
       ).toBeLessThanOrEqual(0);
     }
+  });
+
+  test("availability dot sits on the far (left) corner in RTL", async ({
+    page,
+  }) => {
+    await page.goto("/fa/menu");
+    const card = page.locator("a[data-availability]").first();
+    const [c, d] = await Promise.all([
+      card.boundingBox(),
+      card.getByTestId("availability-dot").boundingBox(),
+    ]);
+    expect(c && d && d.x < c.x + 10).toBe(true);
   });
 
   test("category nav runs right-to-left", async ({ page }) => {

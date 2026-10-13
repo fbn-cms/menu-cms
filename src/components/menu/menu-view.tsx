@@ -350,7 +350,8 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
             id={`c-${category.slug}`}
             data-category
             aria-labelledby={`h-${category.slug}`}
-            className="scroll-mt-16 px-4 pt-5"
+            // Each category is its own rounded panel; dishes sit on it as raised cards.
+            className="bg-muted/40 mx-3 mt-5 scroll-mt-16 rounded-2xl border p-2.5 shadow-sm"
           >
             <h2
               id={`h-${category.slug}`}
@@ -369,7 +370,7 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
                 {category.description}
               </p>
             )}
-            <ul className="mt-3 divide-y">
+            <ul className="mt-3 space-y-3">
               {category.items.map((item) => (
                 <li
                   key={item.id}
@@ -393,6 +394,12 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
   );
 }
 
+const AVAILABILITY_DOT: Record<MenuItem["availability"], string> = {
+  available: "bg-emerald-500",
+  limited: "bg-amber-400",
+  unavailable: "bg-red-600",
+};
+
 function ItemRow({
   item,
   locale,
@@ -415,12 +422,26 @@ function ItemRow({
   return (
     <Link
       href={`/${locale}/item/${item.slug}`}
-      className="focus-visible:ring-ring flex gap-3 py-3 outline-none focus-visible:ring-2"
+      data-availability={item.availability}
+      className={cn(
+        "bg-background focus-visible:ring-ring relative flex gap-3 rounded-xl border p-3 shadow-md shadow-black/5 transition-shadow outline-none hover:shadow-lg focus-visible:ring-2",
+        soldOut && "shadow-sm",
+      )}
     >
+      {/* Availability dot on the far corner. Decorative: the text badge below carries the meaning. */}
+      <span
+        aria-hidden="true"
+        data-testid="availability-dot"
+        className={cn(
+          "ring-background absolute -end-1.5 -top-1.5 size-3.5 rounded-full ring-2",
+          AVAILABILITY_DOT[item.availability],
+        )}
+      />
       <ItemThumb
         iconKey={item.icon_key}
         lqip={item.icon_lqip}
         dimmed={soldOut}
+        className="size-[72px]"
       />
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">

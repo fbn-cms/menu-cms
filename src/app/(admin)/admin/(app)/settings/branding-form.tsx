@@ -389,8 +389,10 @@ export function BrandingForm({ initial }: { initial: Initial }) {
               <span className="chip chip-active">Starters</span>
               <span className="chip">Mains</span>
             </div>
-            <div className="divide-y px-4">
+            {/* Mirrors the public menu: category panel, raised dish cards, availability dot. */}
+            <div className="bg-muted/40 mx-3 my-3 space-y-2.5 rounded-2xl border p-2.5">
               <PreviewRow
+                dot="bg-emerald-500"
                 title="Kashk-e Bademjan"
                 price="$12.00"
                 badge={
@@ -401,6 +403,7 @@ export function BrandingForm({ initial }: { initial: Initial }) {
                 }
               />
               <PreviewRow
+                dot="bg-amber-400"
                 title="Mirza Ghasemi"
                 price="$11.00"
                 badge={
@@ -412,6 +415,7 @@ export function BrandingForm({ initial }: { initial: Initial }) {
               />
               <PreviewRow
                 dimmed
+                dot="bg-red-600"
                 title="Soup of the Day"
                 price="$9.00"
                 badge={
@@ -434,14 +438,23 @@ function PreviewRow({
   price,
   badge,
   dimmed,
+  dot,
 }: {
   title: string;
   price: string;
   badge: React.ReactNode;
   dimmed?: boolean;
+  dot: string;
 }) {
   return (
-    <div className="flex gap-3 py-3">
+    <div className="bg-background relative flex gap-3 rounded-xl border p-2.5 shadow-md shadow-black/5">
+      <span
+        aria-hidden="true"
+        className={cn(
+          "ring-background absolute -end-1 -top-1 size-3 rounded-full ring-2",
+          dot,
+        )}
+      />
       <div
         className={cn(
           "bg-muted size-12 shrink-0 rounded-lg",

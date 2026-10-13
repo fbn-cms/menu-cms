@@ -37,15 +37,17 @@ export function AvailabilityBadge({
     return (
       <span
         className={cn(
-          "inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200",
+          // Phrases never break internally; the count wraps as a whole on narrow screens.
+          "inline-flex flex-wrap items-center gap-x-1 rounded-2xl bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200",
           className,
         )}
       >
-        <Hourglass aria-hidden="true" className="size-3.5" />
-        {messages.limited}
+        <span className="inline-flex items-center gap-1 whitespace-nowrap">
+          <Hourglass aria-hidden="true" className="size-3.5" />
+          {messages.limited}
+        </span>
         {remainingQty != null && remainingQty > 0 && (
-          <span>
-            {" "}
+          <span className="whitespace-nowrap">
             · {t(messages.remaining, { count: formatCount(remainingQty) })}
           </span>
         )}
