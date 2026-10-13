@@ -157,16 +157,28 @@ test.describe("Persian (RTL)", () => {
     }
   });
 
-  test("availability dot sits on the far (left) corner in RTL", async ({
+  test("availability dot sits on the photo's outer top corner (mirrored in RTL)", async ({
     page,
   }) => {
-    await page.goto("/fa/menu");
-    const card = page.locator("a[data-availability]").first();
-    const [c, d] = await Promise.all([
-      card.boundingBox(),
-      card.getByTestId("availability-dot").boundingBox(),
-    ]);
-    expect(c && d && d.x < c.x + 10).toBe(true);
+    for (const [locale, outerSide] of [
+      ["en", "left"],
+      ["fa", "right"],
+    ] as const) {
+      await page.goto(`/${locale}/menu`);
+      const card = page.locator("a[data-availability]").first();
+      const photo = card.getByTestId("availability-dot").locator("..");
+      const [p, d] = await Promise.all([
+        photo.boundingBox(),
+        card.getByTestId("availability-dot").boundingBox(),
+      ]);
+      expect(p && d).toBeTruthy();
+      const dotCentreX = d!.x + d!.width / 2;
+      // Top corner of the photo, on the side away from the dish name.
+      expect(Math.abs(d!.y + d!.height / 2 - p!.y)).toBeLessThan(6);
+      expect(
+        Math.abs(dotCentreX - (outerSide === "left" ? p!.x : p!.x + p!.width)),
+      ).toBeLessThan(6);
+    }
   });
 
   test("category nav runs right-to-left", async ({ page }) => {

@@ -428,21 +428,25 @@ function ItemRow({
         soldOut && "shadow-sm",
       )}
     >
-      {/* Availability dot on the far corner. Decorative: the text badge below carries the meaning. */}
-      <span
-        aria-hidden="true"
-        data-testid="availability-dot"
-        className={cn(
-          "ring-background absolute -end-1.5 -top-1.5 size-3.5 rounded-full ring-2",
-          AVAILABILITY_DOT[item.availability],
-        )}
-      />
-      <ItemThumb
-        iconKey={item.icon_key}
-        lqip={item.icon_lqip}
-        dimmed={soldOut}
-        className="size-[72px]"
-      />
+      <div className="relative shrink-0">
+        <ItemThumb
+          iconKey={item.icon_key}
+          lqip={item.icon_lqip}
+          dimmed={soldOut}
+          className="size-[72px]"
+        />
+        {/* Availability dot on the photo's top corner, on the side away from the name (mirrors in
+            RTL). Outside the thumb so the sold-out grey filter doesn't dull it. Decorative: the
+            text badge carries the meaning. */}
+        <span
+          aria-hidden="true"
+          data-testid="availability-dot"
+          className={cn(
+            "ring-background absolute -start-1 -top-1 size-3.5 rounded-full ring-2",
+            AVAILABILITY_DOT[item.availability],
+          )}
+        />
+      </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-start justify-between gap-2">
           <h3

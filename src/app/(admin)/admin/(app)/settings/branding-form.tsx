@@ -447,20 +447,19 @@ function PreviewRow({
   dot: string;
 }) {
   return (
-    <div className="bg-background relative flex gap-3 rounded-xl border p-2.5 shadow-md shadow-black/5">
-      <span
-        aria-hidden="true"
-        className={cn(
-          "ring-background absolute -end-1 -top-1 size-3 rounded-full ring-2",
-          dot,
-        )}
-      />
-      <div
-        className={cn(
-          "bg-muted size-12 shrink-0 rounded-lg",
-          dimmed && "opacity-50",
-        )}
-      />
+    <div className="bg-background flex gap-3 rounded-xl border p-2.5 shadow-md shadow-black/5">
+      <div className="relative shrink-0">
+        <div
+          className={cn("bg-muted size-12 rounded-lg", dimmed && "opacity-50")}
+        />
+        <span
+          aria-hidden="true"
+          className={cn(
+            "ring-background absolute -start-1 -top-1 size-3 rounded-full ring-2",
+            dot,
+          )}
+        />
+      </div>
       <div className="min-w-0 flex-1">
         <div className="flex justify-between gap-2 text-sm">
           <span
