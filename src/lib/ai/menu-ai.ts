@@ -383,7 +383,20 @@ export async function composeDish(
           : cfg.provider === "openai"
             ? await runOpenAI(cfg, input)
             : await runCloudflare(input);
-      return finish(composeOutput.parse(raw), input);
+      const out = finish(composeOutput.parse(raw), input);
+      // Weaker models sometimes skip the writing part (empty, or just the dish name again).
+      // Treat that as a failed answer and retry once.
+      const written = (s: string, name: string) =>
+        s.trim().length > name.trim().length + 10;
+      for (const l of LANGS) {
+        if (
+          !input.short_description &&
+          !written(out[l].short_description, out[l].name)
+        ) {
+          throw new Error(`short description missing in ${l}`);
+        }
+      }
+      return out;
     } catch (e) {
       if (e instanceof AiError) throw e; // clear, non-retryable outcome
       lastError = e; // invalid/foreign-alphabet output, transient failure → retry once
