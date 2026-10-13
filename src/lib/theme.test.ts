@@ -4,7 +4,13 @@ import { checkTheme, contrast, deriveTheme, PRESETS, readTheme } from "./theme";
 describe("theme", () => {
   test.each(PRESETS)("preset $label passes the readability checks", (p) => {
     expect(
-      checkTheme({ ...p, showName: true, logoWidth: null, logoHeight: null }),
+      checkTheme({
+        ...p,
+        showName: true,
+        logoWidth: null,
+        logoHeight: null,
+        copyrightHolder: "",
+      }),
     ).toEqual([]);
   });
 
@@ -16,6 +22,7 @@ describe("theme", () => {
         showName: true,
         logoWidth: null,
         logoHeight: null,
+        copyrightHolder: "",
       });
       expect(
         contrast(v["--muted-foreground"], v["--background"]),
@@ -38,6 +45,7 @@ describe("theme", () => {
       showName: true,
       logoWidth: null,
       logoHeight: null,
+      copyrightHolder: "",
     });
     expect(problems.map((p) => p.field)).toEqual(["foreground", "accent"]);
   });

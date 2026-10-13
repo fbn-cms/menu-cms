@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { RestaurantTheme } from "@/components/menu/restaurant-theme";
+import { SiteFooter } from "@/components/menu/site-footer";
 import { ChevronLeft, Clock, Flame, Utensils, Zap } from "lucide-react";
 import { ItemLiveAvailability } from "@/components/menu/item-live-availability";
 import { LanguageSwitcher } from "@/components/menu/language-switcher";
@@ -130,7 +131,7 @@ export default async function ItemPage({
         <article className="space-y-6 px-4 py-5">
           <div>
             <div className="flex items-start justify-between gap-3">
-              <h1 className="text-2xl leading-tight font-semibold">
+              <h1 className="bidi-text text-2xl leading-tight font-semibold">
                 {item.name}
               </h1>
               <p className="shrink-0 text-xl font-semibold tabular-nums">
@@ -141,7 +142,9 @@ export default async function ItemPage({
               <ItemLiveAvailability {...live} variant="badge" />
             </div>
             {item.long_description && (
-              <p className="mt-4 leading-relaxed">{item.long_description}</p>
+              <p className="bidi-text mt-4 leading-relaxed">
+                {item.long_description}
+              </p>
             )}
           </div>
 
@@ -160,7 +163,7 @@ export default async function ItemPage({
                         "text-muted-foreground",
                     )}
                   >
-                    <span>
+                    <span className="bidi-text">
                       {v.name}
                       {v.availability !== "available" && (
                         <span className="ms-2 text-xs">
@@ -244,6 +247,7 @@ export default async function ItemPage({
           )}
         </article>
       </main>
+      <SiteFooter restaurant={menu.restaurant} messages={messages} />
     </RestaurantTheme>
   );
 }

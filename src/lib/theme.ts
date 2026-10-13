@@ -10,6 +10,8 @@ export type ThemeInput = {
   /** Intrinsic logo size, so the header reserves the right space (no layout shift). */
   logoWidth: number | null;
   logoHeight: number | null;
+  /** Name in the footer's "© year … All rights reserved." Empty → the restaurant name. */
+  copyrightHolder: string;
 };
 
 export const PRESETS: (Pick<
@@ -58,6 +60,7 @@ export const DEFAULT_THEME: ThemeInput = {
   showName: true,
   logoWidth: null,
   logoHeight: null,
+  copyrightHolder: "",
 };
 
 const HEX = /^#[0-9a-f]{6}$/i;
@@ -81,6 +84,10 @@ export function readTheme(json: unknown): ThemeInput {
     showName: typeof t.showName === "boolean" ? t.showName : true,
     logoWidth: dim(t.logoWidth),
     logoHeight: dim(t.logoHeight),
+    copyrightHolder:
+      typeof t.copyrightHolder === "string"
+        ? t.copyrightHolder.slice(0, 80)
+        : "",
   };
 }
 

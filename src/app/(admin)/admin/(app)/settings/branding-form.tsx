@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { saveBranding } from "@/lib/actions/settings";
 import { resizeToWebp } from "@/lib/images/client-resize";
 import { imageUrl } from "@/lib/menu/image";
@@ -29,6 +30,8 @@ import { cn } from "@/lib/utils";
 
 type Initial = {
   name: string;
+  address: string;
+  phone: string;
   logoKey: string | null;
   theme: ThemeInput;
   updatedAt: string;
@@ -38,6 +41,8 @@ const LOGO_MAX_SIDE = 512;
 export function BrandingForm({ initial }: { initial: Initial }) {
   const router = useRouter();
   const [name, setName] = useState(initial.name);
+  const [address, setAddress] = useState(initial.address);
+  const [phone, setPhone] = useState(initial.phone);
   const [logoKey, setLogoKey] = useState(initial.logoKey);
   const [theme, setTheme] = useState<ThemeInput>(initial.theme);
   const [uploading, setUploading] = useState(false);
@@ -50,6 +55,8 @@ export function BrandingForm({ initial }: { initial: Initial }) {
     setTheme((t) => ({ ...t, ...patch }));
   const dirty =
     name !== initial.name ||
+    address !== initial.address ||
+    phone !== initial.phone ||
     logoKey !== initial.logoKey ||
     JSON.stringify(theme) !== JSON.stringify(initial.theme);
 
@@ -84,6 +91,8 @@ export function BrandingForm({ initial }: { initial: Initial }) {
     startSave(async () => {
       const res = await saveBranding({
         name,
+        address,
+        phone,
         logoKey,
         theme,
         expectedUpdatedAt: initial.updatedAt,
@@ -124,6 +133,61 @@ export function BrandingForm({ initial }: { initial: Initial }) {
             />
             Show the name next to the logo
           </label>
+        </section>
+
+        {/* Contact & footer */}
+        <section
+          aria-labelledby="s-contact"
+          className="space-y-3 rounded-2xl border p-4"
+        >
+          <h2 id="s-contact" className="font-semibold">
+            Contact &amp; footer
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            Shown at the bottom of every menu page. Leave a field empty to hide
+            it.
+          </p>
+          <div className="space-y-1.5">
+            <Label htmlFor="address">Address</Label>
+            <Textarea
+              id="address"
+              value={address}
+              maxLength={200}
+              rows={2}
+              placeholder="123 Queen St W, Toronto, ON"
+              onChange={(e) => setAddress(e.target.value)}
+              className="text-base"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="phone">Phone</Label>
+            <Input
+              id="phone"
+              type="tel"
+              inputMode="tel"
+              value={phone}
+              maxLength={40}
+              placeholder="+1 416 555 0100"
+              onChange={(e) => setPhone(e.target.value)}
+              className="h-11 text-base"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="copyright">Copyright holder</Label>
+            <Input
+              id="copyright"
+              value={theme.copyrightHolder}
+              maxLength={80}
+              placeholder={name || "Name of the place"}
+              onChange={(e) => set({ copyrightHolder: e.target.value })}
+              className="h-11 text-base"
+            />
+            <p className="text-muted-foreground text-xs">
+              Footer reads “© {new Date().getFullYear()}{" "}
+              {theme.copyrightHolder.trim() || name || "…"}. All rights
+              reserved.”
+            </p>
+          </div>
         </section>
 
         {/* Logo */}

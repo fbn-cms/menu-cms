@@ -88,6 +88,7 @@ Deploy      —                         auto on merge to main         manual wor
   - Supabase: [auth.email] enable_signup must stay TRUE (it is the email provider switch); sign-ups are blocked by [auth] enable_signup=false
   - Hosted auth config + first accounts: scripts/configure-supabase-auth.mjs, scripts/bootstrap-team.mjs
 - [x] **Appearance settings (owner request, 2026-10-13)** — /admin/settings (owner only): name, show-name toggle, logo upload (browser resize → WebP → /api/admin/images → R2, content-hashed key), 5 palettes + custom background/text/accent. All other colours derived; contrast enforced (text ≥ 7:1, accent ≥ 3:1, button text ≥ 4.5:1). Live preview. Applied to public pages via CSS variables. 3 e2e tests
+- [x] **Header/footer (owner request, 2026-10-13)** — language row above logo+name; hidden "Staff login" after 5 quick taps on the brand (session only); footer with address (maps link), phone (tel: link) and "© year holder. All rights reserved." (holder editable in Settings, defaults to the name). RTL fix: restaurant-written text uses `unicode-bidi: plaintext` (Tailwind v4 needs `@utility`, not `@layer utilities`)
 - [ ] **Phase 5** — item/category editors, image pipeline, reorder, bulk, concurrency, revalidation
 - [ ] **Phase 6** — QR (single code, level H), `/t/[slug]` scan logging (no bulk print on workers.dev)
 - [ ] **Phase 7** — rate limits, headers/CSP, cron dispatcher, backups, CI/CD demo+prod, RUNBOOK, HANDOVER

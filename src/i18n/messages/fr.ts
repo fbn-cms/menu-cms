@@ -43,4 +43,10 @@ export const fr: Messages = {
     "Mises à jour en direct en pause — actualisation à votre retour.",
   notFoundTitle: "Page introuvable",
   notFoundBody: "Ce plat ou cette page n'est pas au menu.",
+  allRightsReserved: "Tous droits réservés.",
+  address: "Adresse",
+  phone: "Téléphone",
+  openInMaps: "Ouvrir dans Plans",
+  call: "Appeler",
+  staffLogin: "Connexion équipe",
 };

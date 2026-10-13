@@ -94,6 +94,25 @@ test.describe("public menu", () => {
 });
 
 test.describe("Persian (RTL)", () => {
+  test("English fallback text keeps its own reading order and stays inside the column", async ({
+    page,
+  }) => {
+    await page.goto("/fa/menu");
+    const desc = page.locator("p", {
+      hasText: "Classic French custard infused with Persian saffron.",
+    });
+    await expect(desc).toBeVisible();
+    expect(await desc.evaluate((el) => getComputedStyle(el).unicodeBidi)).toBe(
+      "plaintext",
+    );
+    // The paragraph box stays in the dish column (its text reads left-to-right, as English should).
+    const [d, n] = await Promise.all([
+      desc.boundingBox(),
+      page.getByRole("heading", { name: "Saffron Crème Brûlée" }).boundingBox(),
+    ]);
+    expect(d && n && Math.abs(d.x + d.width - (n.x + n.width)) < 2).toBe(true);
+  });
+
   test("html is rtl + lang=fa, and nothing overflows horizontally", async ({
     page,
   }) => {

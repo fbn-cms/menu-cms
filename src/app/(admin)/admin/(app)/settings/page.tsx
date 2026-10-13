@@ -11,7 +11,7 @@ export default async function SettingsPage() {
   const supabase = await createSupabaseServer();
   const { data: r } = await supabase
     .from("restaurants")
-    .select("name, logo_key, theme_json, updated_at")
+    .select("name, address, phone, logo_key, theme_json, updated_at")
     .eq("id", ctx.restaurant.id)
     .single();
   if (!r) return <p>Restaurant not found.</p>;
@@ -24,6 +24,8 @@ export default async function SettingsPage() {
       <BrandingForm
         initial={{
           name: r.name,
+          address: r.address ?? "",
+          phone: r.phone ?? "",
           logoKey: r.logo_key,
           theme: readTheme(r.theme_json),
           updatedAt: r.updated_at,

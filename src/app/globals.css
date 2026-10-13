@@ -149,6 +149,13 @@
   }
 }
 
+/* Restaurant-written text (names, descriptions, address) may be English inside a Persian page
+   (translation fallback). plaintext orders each paragraph by its own content — punctuation and
+   numbers land correctly — while alignment still follows the page direction. */
+@utility bidi-text {
+  unicode-bidi: plaintext;
+}
+
 @layer utilities {
   .no-scrollbar {
     scrollbar-width: none;

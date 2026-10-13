@@ -42,4 +42,10 @@ export const fa: Messages = {
   liveOffline: "به‌روزرسانی زنده متوقف است — هنگام بازگشت تازه می‌شود.",
   notFoundTitle: "صفحه پیدا نشد",
   notFoundBody: "این غذا یا صفحه در منو نیست.",
+  allRightsReserved: "تمامی حقوق محفوظ است.",
+  address: "نشانی",
+  phone: "تلفن",
+  openInMaps: "باز کردن در نقشه",
+  call: "تماس",
+  staffLogin: "ورود کارکنان",
 };

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { RestaurantTheme } from "@/components/menu/restaurant-theme";
+import { SiteFooter } from "@/components/menu/site-footer";
 import { MenuView } from "@/components/menu/menu-view";
 import { SiteHeader } from "@/components/menu/site-header";
 import { isLocale } from "@/i18n/config";
@@ -54,6 +55,7 @@ export default async function CategoryPage({
           categorySlug={category}
         />
       </main>
+      <SiteFooter restaurant={menu.restaurant} messages={messages} />
     </RestaurantTheme>
   );
 }

@@ -42,6 +42,12 @@ export const en = {
   liveOffline: "Live updates paused — refreshing when you return.",
   notFoundTitle: "Page not found",
   notFoundBody: "This dish or page isn't on the menu.",
+  allRightsReserved: "All rights reserved.",
+  address: "Address",
+  phone: "Phone",
+  openInMaps: "Open in maps",
+  call: "Call",
+  staffLogin: "Staff login",
 };
 
 export type Messages = typeof en;

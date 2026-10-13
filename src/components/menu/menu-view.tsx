@@ -223,7 +223,7 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
                 aria-current={
                   active ? (categorySlug ? "page" : "location") : undefined
                 }
-                className={cn("chip", active && "chip-active")}
+                className={cn("bidi-text chip", active && "chip-active")}
               >
                 {c.name}
               </Link>
@@ -338,7 +338,7 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
       </div>
 
       {/* Menu */}
-      <div id="menu" className="pb-16">
+      <div id="menu" className="pb-4">
         {visible.length === 0 && (
           <p className="text-muted-foreground px-4 py-12 text-center">
             {messages.noResults}
@@ -352,7 +352,10 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
             aria-labelledby={`h-${category.slug}`}
             className="scroll-mt-16 px-4 pt-5"
           >
-            <h2 id={`h-${category.slug}`} className="text-xl font-semibold">
+            <h2
+              id={`h-${category.slug}`}
+              className="bidi-text text-xl font-semibold"
+            >
               {categorySlug ? (
                 category.name
               ) : (
@@ -362,7 +365,7 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
               )}
             </h2>
             {category.description && (
-              <p className="text-muted-foreground mt-1 text-sm">
+              <p className="bidi-text text-muted-foreground mt-1 text-sm">
                 {category.description}
               </p>
             )}
@@ -423,7 +426,7 @@ function ItemRow({
         <div className="flex items-start justify-between gap-2">
           <h3
             className={cn(
-              "leading-snug font-medium",
+              "bidi-text leading-snug font-medium",
               soldOut && "text-muted-foreground",
             )}
           >
@@ -439,7 +442,7 @@ function ItemRow({
           </span>
         </div>
         {item.short_description && (
-          <p className="text-muted-foreground mt-0.5 line-clamp-2 text-sm">
+          <p className="bidi-text text-muted-foreground mt-0.5 line-clamp-2 text-sm">
             {item.short_description}
           </p>
         )}

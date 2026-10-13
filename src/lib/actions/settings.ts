@@ -16,6 +16,20 @@ const hex = z
   .transform((v) => v.toLowerCase());
 const input = z.object({
   name: z.string().trim().min(1, "The name can't be empty.").max(120),
+  address: z
+    .string()
+    .trim()
+    .max(200, "Address is too long (200 characters max).")
+    .transform((v) => v || null),
+  phone: z
+    .string()
+    .trim()
+    .max(40)
+    .refine(
+      (v) => v === "" || /^[+()\d\s.-]{6,40}$/.test(v),
+      "Phone can only contain digits, spaces, + ( ) - and .",
+    )
+    .transform((v) => v || null),
   logoKey: z.string().nullable(),
   theme: z.object({
     preset: z.string().max(20),
@@ -25,6 +39,7 @@ const input = z.object({
     showName: z.boolean(),
     logoWidth: z.number().int().min(1).max(4096).nullable(),
     logoHeight: z.number().int().min(1).max(4096).nullable(),
+    copyrightHolder: z.string().trim().max(80),
   }),
   expectedUpdatedAt: z.string(),
 });
@@ -62,7 +77,13 @@ export async function saveBranding(
   const supabase = await createSupabaseServer();
   const { data, error } = await supabase
     .from("restaurants")
-    .update({ name: v.name, logo_key: v.logoKey, theme_json: v.theme })
+    .update({
+      name: v.name,
+      address: v.address,
+      phone: v.phone,
+      logo_key: v.logoKey,
+      theme_json: v.theme,
+    })
     .eq("id", ctx.restaurant.id)
     .eq("updated_at", v.expectedUpdatedAt) // the other owner may have saved meanwhile
     .select("id");
