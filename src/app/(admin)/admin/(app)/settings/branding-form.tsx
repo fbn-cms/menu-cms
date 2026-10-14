@@ -25,6 +25,7 @@ import {
   cardsAreDark,
   PATTERNS,
   type PatternId,
+  type PatternLayout,
   PRESETS,
   type ThemeInput,
 } from "@/lib/theme";
@@ -53,6 +54,7 @@ export function BrandingForm({ initial }: { initial: Initial }) {
 
   const problems = useMemo(() => checkTheme(theme), [theme]);
   const vars = useMemo(() => deriveTheme(theme), [theme]);
+  const frieze = theme.pattern != null && theme.layout === "frieze";
   const set = (patch: Partial<ThemeInput>) =>
     setTheme((t) => ({ ...t, ...patch }));
   const dirty =
@@ -284,6 +286,7 @@ export function BrandingForm({ initial }: { initial: Initial }) {
                       foreground: p.foreground,
                       accent: p.accent,
                       pattern: p.pattern,
+                      layout: p.layout,
                       panel: p.panel,
                       panelOpacity: p.panelOpacity,
                       card: p.card,
@@ -387,17 +390,49 @@ export function BrandingForm({ initial }: { initial: Initial }) {
             </div>
           </fieldset>
 
-          {/* Surfaces. With a pattern, sections sit on the page colour (no panel), so only the
-              dish sheet colour applies. */}
+          {/* How the pattern is used. Either way, text never sits on the artwork. */}
           {theme.pattern && (
-            <p className="text-muted-foreground text-sm">
-              With a pattern, the artwork frames the menu (top band, footer
-              strip, page margins on wide screens) and never sits behind text.
-              Each section&apos;s dishes sit on one solid sheet.
-            </p>
+            <fieldset>
+              <legend className="mb-1.5 text-sm font-medium">
+                Pattern layout
+              </legend>
+              <div
+                role="radiogroup"
+                aria-label="Pattern layout"
+                className="grid gap-2 sm:grid-cols-2"
+              >
+                {LAYOUT_OPTIONS.map((o) => {
+                  const on = theme.layout === o.id;
+                  return (
+                    <button
+                      key={o.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={on}
+                      onClick={() => set({ preset: "custom", layout: o.id })}
+                      className={cn(
+                        "rounded-xl border-2 p-3 text-start text-sm",
+                        on ? "border-foreground" : "border-border",
+                      )}
+                    >
+                      <span className="flex items-center justify-between font-medium">
+                        {o.label}
+                        {on && <Check aria-hidden="true" className="size-4" />}
+                      </span>
+                      <span className="text-muted-foreground mt-1 block text-xs leading-snug">
+                        {o.hint}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </fieldset>
           )}
+
+          {/* Surfaces. Frieze: sections sit on the page colour (no panel), so only the dish
+              sheet colour applies. Panels: panel colour + how strongly it washes the artwork. */}
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className={cn("space-y-2", theme.pattern && "hidden")}>
+            <div className={cn("space-y-2", frieze && "hidden")}>
               <ColourField
                 id="panel"
                 label="Section panels"
@@ -407,7 +442,8 @@ export function BrandingForm({ initial }: { initial: Initial }) {
               />
               <div className="space-y-1">
                 <Label htmlFor="panel-opacity" className="text-xs">
-                  Panel opacity — {Math.round(theme.panelOpacity * 100)}%
+                  {theme.pattern ? "Pattern wash" : "Panel opacity"} —{" "}
+                  {Math.round(theme.panelOpacity * 100)}%
                 </Label>
                 <input
                   id="panel-opacity"
@@ -428,7 +464,7 @@ export function BrandingForm({ initial }: { initial: Initial }) {
             </div>
             <ColourField
               id="card"
-              label={theme.pattern ? "Dish sheets" : "Dish cards"}
+              label={frieze ? "Dish sheets" : "Dish cards"}
               value={theme.card}
               onChange={(v) => set({ preset: "custom", card: v })}
               invalid={problems.some((p) => p.field === "card")}
@@ -477,7 +513,8 @@ export function BrandingForm({ initial }: { initial: Initial }) {
         <div className="overflow-hidden rounded-2xl border shadow-sm">
           <div
             style={vars as React.CSSProperties}
-            data-ornate={theme.pattern ? "" : undefined}
+            data-ornate={frieze ? "" : undefined}
+            data-panels={theme.pattern && !frieze ? "" : undefined}
             className={cn(
               "bg-background text-foreground pb-1",
               cardsAreDark(theme) && "dark",
@@ -489,13 +526,13 @@ export function BrandingForm({ initial }: { initial: Initial }) {
                 className="pattern-band border-primary h-16 border-b-2"
               />
             )}
-            <div className="surface-chrome ornate:relative ornate:-mt-7 ornate:mx-auto ornate:w-fit ornate:rounded-xl ornate:ring-1 ornate:ring-primary/70 ornate:shadow-lg ornate:px-5 ornate:py-2 flex items-center gap-2 px-4 pt-4 pb-2">
+            <div className="surface-chrome patterned:relative patterned:-mt-7 patterned:mx-auto patterned:w-fit patterned:rounded-xl patterned:ring-1 patterned:ring-primary/70 patterned:shadow-lg patterned:px-5 patterned:py-2 flex items-center gap-2 px-4 pt-4 pb-2">
               {logoKey && (
                 // eslint-disable-next-line @next/next/no-img-element -- no next/image on Workers
                 <img src={imageUrl(logoKey)} alt="" className="h-9 w-auto" />
               )}
               {(theme.showName || !logoKey) && (
-                <span className="ornate:font-display text-lg font-semibold">
+                <span className="patterned:font-display text-lg font-semibold">
                   {name || "Name"}
                 </span>
               )}
@@ -504,13 +541,14 @@ export function BrandingForm({ initial }: { initial: Initial }) {
               <span className="chip cat-tab chip-active">Starters</span>
               <span className="chip cat-tab">Mains</span>
             </div>
-            {/* Mirrors the public menu: category panel + raised dish cards, or (ornate) a centred
-                title over one sheet of dishes split by hairlines. */}
-            <div className="surface-panel ornate:border-0 ornate:p-0 ornate:mx-4 ornate:shadow-none mx-3 my-3 space-y-2.5 rounded-2xl border p-2.5">
-              <p className="ornate:font-display ornate:text-center ornate:text-lg px-1 text-sm font-semibold">
+            {/* Mirrors the public menu: category panel + raised dish cards; frieze = a centred
+                title over one sheet of dishes split by hairlines; panels = title strip over the
+                washed artwork with cards on it. */}
+            <div className="surface-panel ornate:border-0 ornate:p-0 ornate:mx-4 ornate:shadow-none panels:p-0 panels:overflow-hidden panels:space-y-0 mx-3 my-3 space-y-2.5 rounded-2xl border p-2.5">
+              <p className="patterned:font-display patterned:text-center patterned:text-lg panels:border-b panels:py-2 px-1 text-sm font-semibold">
                 Starters
               </p>
-              <div className="ornate:surface-card ornate:divide-y ornate:space-y-0 ornate:overflow-hidden ornate:rounded-xl ornate:border ornate:shadow-lg space-y-2.5">
+              <div className="panels:pattern-wash panels:p-2.5 ornate:surface-card ornate:divide-y ornate:space-y-0 ornate:overflow-hidden ornate:rounded-xl ornate:border ornate:shadow-lg space-y-2.5">
                 <PreviewRow
                   dot="bg-emerald-500"
                   title="Kashk-e Bademjan"
@@ -647,6 +685,19 @@ function ColourField({
     </div>
   );
 }
+
+const LAYOUT_OPTIONS: { id: PatternLayout; label: string; hint: string }[] = [
+  {
+    id: "frieze",
+    label: "Frieze",
+    hint: "Pattern bands at the top and bottom; dishes on one sheet per section. Best with deep colours.",
+  },
+  {
+    id: "panels",
+    label: "Panels",
+    hint: "Classic bordered sections with the pattern washed inside them; dishes on solid cards. Best with pale colours.",
+  },
+];
 
 /** Small pattern thumbnail over the theme background (transparent artwork shows the colour). */
 function patternSwatch(id: PatternId, background: string): React.CSSProperties {

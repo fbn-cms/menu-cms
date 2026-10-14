@@ -5,7 +5,7 @@ import { cardsAreDark, deriveTheme, isDark, readTheme } from "@/lib/theme";
  * Applies the owner's colours to the public menu. Values come from readTheme(), which only lets
  * through #rrggbb hex colours, so nothing from the database can inject CSS.
  * Dark backgrounds also switch on the `dark:` variants (badges etc.) for readable contrast.
- * A background pattern switches on the `ornate:` layout variants (data-ornate).
+ * A background pattern switches on the `ornate:` (frieze) or `panels:` layout variants.
  */
 export function RestaurantTheme({
   theme,
@@ -24,10 +24,13 @@ export function RestaurantTheme({
       <style>{`:root,:root .dark{${css}}:root{color-scheme:${isDark(t.background) ? "dark" : "light"}}`}</style>
       {/* The menu column is solid; on wide screens the patterned page shows only beside it. */}
       <div
-        data-ornate={t.pattern ? "" : undefined}
+        data-ornate={t.pattern && t.layout === "frieze" ? "" : undefined}
+        data-panels={t.pattern && t.layout === "panels" ? "" : undefined}
         className={cn(
           "bg-background min-h-dvh",
-          t.pattern && "sm:shadow-[0_0_48px_rgb(0_0_0/0.45)]",
+          t.pattern &&
+            t.layout === "frieze" &&
+            "sm:shadow-[0_0_48px_rgb(0_0_0/0.45)]",
           cardsAreDark(t) && "dark",
         )}
       >

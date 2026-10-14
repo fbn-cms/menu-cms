@@ -39,6 +39,7 @@ const input = z.object({
     pattern: z
       .enum(PATTERNS.map((x) => x.id) as [PatternId, ...PatternId[]])
       .nullable(),
+    layout: z.enum(["frieze", "panels"]),
     panel: hex,
     panelOpacity: z.number().min(0.5).max(1),
     card: hex,

@@ -355,28 +355,36 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
             data-category
             aria-labelledby={`h-${category.slug}`}
             // Plain themes: each category is its own rounded panel; dishes sit on it as raised
-            // cards. Ornate: no box — a centred title, then one opaque sheet split by hairlines.
-            className="surface-panel ornate:mx-4 ornate:mt-8 ornate:rounded-none ornate:border-0 ornate:p-0 ornate:shadow-none ornate:backdrop-blur-none mx-3 mt-5 scroll-mt-16 rounded-2xl border p-2.5 shadow-sm backdrop-blur-sm"
-          >
-            <Ornament />
-            <h2
-              id={`h-${category.slug}`}
-              className="bidi-text ornate:font-display ornate:text-center ornate:text-[1.7rem] ornate:leading-tight text-xl font-semibold"
-            >
-              {categorySlug ? (
-                category.name
-              ) : (
-                <Link href={`/${locale}/menu/${category.slug}`}>
-                  {category.name}
-                </Link>
-              )}
-            </h2>
-            {category.description && (
-              <p className="bidi-text text-muted-foreground ornate:mx-auto ornate:mt-2 ornate:max-w-md ornate:text-center mt-1 text-sm">
-                {category.description}
-              </p>
+            // cards. Ornate (frieze): no box — a centred title, then one opaque sheet split by
+            // hairlines. Panels: a framed panel with a solid title strip, the washed artwork
+            // below it, and solid dish cards on top of that.
+            className={cn(
+              "surface-panel mx-3 mt-5 scroll-mt-16 rounded-2xl border p-2.5 shadow-sm backdrop-blur-sm",
+              "ornate:mx-4 ornate:mt-8 ornate:rounded-none ornate:border-0 ornate:p-0 ornate:shadow-none ornate:backdrop-blur-none",
+              "panels:mt-6 panels:overflow-hidden panels:p-0 panels:shadow-md panels:backdrop-blur-none panels:outline-1 panels:outline-offset-[3px] panels:outline-primary/25 panels:outline-solid",
             )}
-            <ul className="ornate:surface-card ornate:mt-5 ornate:space-y-0 ornate:divide-y ornate:overflow-hidden ornate:rounded-2xl ornate:border ornate:shadow-xl ornate:shadow-black/25 mt-3 space-y-3">
+          >
+            <div className="panels:border-b panels:px-4 panels:pt-4 panels:pb-3">
+              <Ornament />
+              <h2
+                id={`h-${category.slug}`}
+                className="bidi-text patterned:font-display patterned:text-center patterned:leading-tight ornate:text-[1.7rem] panels:text-[1.5rem] text-xl font-semibold"
+              >
+                {categorySlug ? (
+                  category.name
+                ) : (
+                  <Link href={`/${locale}/menu/${category.slug}`}>
+                    {category.name}
+                  </Link>
+                )}
+              </h2>
+              {category.description && (
+                <p className="bidi-text text-muted-foreground patterned:mx-auto patterned:mt-1.5 patterned:max-w-md patterned:text-center mt-1 text-sm">
+                  {category.description}
+                </p>
+              )}
+            </div>
+            <ul className="panels:pattern-wash panels:mt-0 panels:p-3 ornate:surface-card ornate:mt-5 ornate:space-y-0 ornate:divide-y ornate:overflow-hidden ornate:rounded-2xl ornate:border ornate:shadow-xl ornate:shadow-black/25 mt-3 space-y-3">
               {category.items.map((item) => (
                 <li
                   key={item.id}
@@ -400,12 +408,12 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
   );
 }
 
-/** Small accent rule above an ornate section title: line — diamond — line. */
+/** Small accent rule above a pattern theme's section title: line — diamond — line. */
 function Ornament() {
   return (
     <div
       aria-hidden="true"
-      className="text-primary ornate:flex mb-2 hidden items-center justify-center gap-2"
+      className="text-primary patterned:flex mb-2 hidden items-center justify-center gap-2"
     >
       <span className="h-px w-10 bg-current opacity-70" />
       <span className="size-1.5 rotate-45 bg-current" />

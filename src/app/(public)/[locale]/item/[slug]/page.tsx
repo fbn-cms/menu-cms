@@ -129,10 +129,10 @@ export default async function ItemPage({
         </div>
 
         {/* Ornate: the details sheet lifts over the photo's lower edge. */}
-        <article className="surface-card ornate:relative ornate:mx-3 ornate:-mt-8 ornate:rounded-2xl ornate:border ornate:shadow-xl ornate:shadow-black/25 space-y-6 px-4 py-5">
+        <article className="surface-card patterned:relative patterned:mx-3 patterned:-mt-8 patterned:rounded-2xl patterned:border patterned:shadow-xl patterned:shadow-black/25 space-y-6 px-4 py-5">
           <div>
             <div className="flex items-start justify-between gap-3">
-              <h1 className="bidi-text ornate:font-display ornate:text-[1.75rem] text-2xl leading-tight font-semibold">
+              <h1 className="bidi-text patterned:font-display patterned:text-[1.75rem] text-2xl leading-tight font-semibold">
                 {item.name}
               </h1>
               <p className="shrink-0 text-xl font-semibold tabular-nums">

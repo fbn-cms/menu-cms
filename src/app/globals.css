@@ -3,8 +3,11 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
-/* Pattern themes switch the public menu to the "ornate" layout (see src/lib/theme.ts). */
+/* Pattern themes switch the public menu to one of two layouts (see src/lib/theme.ts):
+   ornate = frieze layout, panels = washed-pattern panels, patterned = either. */
 @custom-variant ornate (&:where([data-ornate], [data-ornate] *));
+@custom-variant panels (&:where([data-panels], [data-panels] *));
+@custom-variant patterned (&:where([data-ornate], [data-ornate] *, [data-panels], [data-panels] *));
 
 @theme inline {
   --color-background: var(--background);
@@ -178,6 +181,8 @@
   --band-pattern: none;
   --band-pattern-size: auto;
   --band-ground: var(--background);
+  --wash-pattern: none;
+  --wash-pattern-size: auto;
   --chrome: var(--background);
   --chrome-solid: var(--background);
   --chrome-foreground: var(--foreground);
@@ -206,6 +211,13 @@
   background-size: var(--band-pattern-size);
   background-repeat: repeat;
   background-position: center top;
+}
+/* Panels layout: the artwork washed out in the panel colour, between panel border and cards. */
+@utility pattern-wash {
+  background-color: var(--panel-solid);
+  background-image: var(--wash-pattern);
+  background-size: var(--wash-pattern-size);
+  background-repeat: repeat;
 }
 @utility surface-chrome {
   background-color: var(--chrome);

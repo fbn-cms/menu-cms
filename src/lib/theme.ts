@@ -5,9 +5,13 @@
 //   chrome — header, category bar, search/filters, footer
 //   panel  — each menu section (Starters, Mains…)
 //   card   — the dishes; always opaque
-// With a pattern the layout turns "ornate": the artwork frames the menu (a masthead band, a
-// closing frieze, toned-down margins on wide screens) but never sits behind text. Sections drop
-// their boxes and each one becomes a single opaque sheet of dishes split by hairlines.
+// With a pattern the owner picks one of two layouts; in both, text never sits on the artwork.
+//   frieze — the artwork frames the menu (a masthead band, a closing frieze, toned-down margins
+//            on wide screens). Sections drop their boxes; each becomes one opaque sheet of
+//            dishes split by hairlines. Suits the deep palettes.
+//   panels — the classic bordered section panels and dish cards on a pale page. Inside each
+//            panel, between its border and the cards, the artwork shows washed out in the panel
+//            colour (panelOpacity = wash strength). Header and footer get the same wash.
 // Client-safe (no Zod).
 
 // ---------------------------------------------------------------- colour maths
@@ -73,6 +77,9 @@ export const PATTERNS: {
 const isPattern = (v: unknown): v is PatternId =>
   PATTERNS.some((p) => p.id === v);
 
+export type PatternLayout = "frieze" | "panels";
+export const PATTERN_LAYOUTS: PatternLayout[] = ["frieze", "panels"];
+
 export type ThemeInput = {
   preset: string;
   background: string;
@@ -80,7 +87,10 @@ export type ThemeInput = {
   accent: string;
   /** Background pattern behind everything, or null for a plain colour. */
   pattern: PatternId | null;
-  /** Section panel colour and its opacity (translucent over a pattern). */
+  /** How a pattern is used (ignored without one). */
+  layout: PatternLayout;
+  /** Section panel colour and its opacity — with the panels layout, how strongly the panel
+   *  colour washes over the artwork. */
   panel: string;
   panelOpacity: number;
   /** Dish card colour (opaque). */
@@ -100,6 +110,7 @@ type PresetColours = Pick<
   | "foreground"
   | "accent"
   | "pattern"
+  | "layout"
   | "panel"
   | "panelOpacity"
   | "card"
@@ -117,6 +128,7 @@ const plain = (
   foreground,
   accent,
   pattern: null,
+  layout: "frieze",
   panel: mix(background, foreground, 0.03),
   panelOpacity: 1,
   card: background,
@@ -144,6 +156,7 @@ export const PRESETS: (PresetColours & { label: string })[] = [
     foreground: "#f4f8fc",
     accent: "#ffc260",
     pattern: "cobalt-tangerine",
+    layout: "frieze",
     panel: "#10264f",
     panelOpacity: 0.86,
     card: "#fff6e6",
@@ -155,6 +168,7 @@ export const PRESETS: (PresetColours & { label: string })[] = [
     foreground: "#f3f1e6",
     accent: "#bfb681",
     pattern: "mint-gold",
+    layout: "frieze",
     panel: "#232340",
     panelOpacity: 0.86,
     card: "#eef4ee",
@@ -166,9 +180,48 @@ export const PRESETS: (PresetColours & { label: string })[] = [
     foreground: "#f5eedc",
     accent: "#c8924f",
     pattern: "navy-burgundy",
+    layout: "frieze",
     panel: "#0f182e",
     panelOpacity: 0.86,
     card: "#f6efdd",
+  },
+  // Pale "panels" variants: washed palette colours for the page, the artwork washed out inside
+  // the section panels, white-ish solid dish cards, the deepest artwork colour as the accent.
+  {
+    preset: "cobalt-pale",
+    label: "Cobalt & Tangerine · Pale",
+    background: "#f3f6fb",
+    foreground: "#142b57",
+    accent: "#1f4e9c",
+    pattern: "cobalt-tangerine",
+    layout: "panels",
+    panel: "#e3ebf6",
+    panelOpacity: 0.8,
+    card: "#ffffff",
+  },
+  {
+    preset: "mint-pale",
+    label: "Mint & Antique Gold · Pale",
+    background: "#f3f3ec",
+    foreground: "#26263f",
+    accent: "#6b6343",
+    pattern: "mint-gold",
+    layout: "panels",
+    panel: "#e4eae1",
+    panelOpacity: 0.84,
+    card: "#fffffb",
+  },
+  {
+    preset: "navy-pale",
+    label: "Navy & Burgundy · Pale",
+    background: "#f8f3e8",
+    foreground: "#162341",
+    accent: "#6e1d3f",
+    pattern: "navy-burgundy",
+    layout: "panels",
+    panel: "#eee4d0",
+    panelOpacity: 0.84,
+    card: "#fffdf7",
   },
 ];
 
@@ -205,6 +258,7 @@ export function readTheme(json: unknown): ThemeInput {
     foreground,
     accent: isHex(t.accent) ? t.accent.toLowerCase() : DEFAULT_THEME.accent,
     pattern: isPattern(t.pattern) ? t.pattern : null,
+    layout: t.layout === "panels" ? "panels" : "frieze",
     // Themes saved before panels/cards existed keep their original look.
     panel: isHex(t.panel)
       ? t.panel.toLowerCase()
@@ -269,11 +323,17 @@ export function deriveTheme(t: ThemeInput) {
     contrast("#ffffff", accent) >= contrast("#111111", accent)
       ? "#ffffff"
       : "#111111";
-  // Ornate (pattern) layout: header/nav/footer and sections sit on the solid page colour; the
-  // artwork only appears in its own bands, so no text is ever drawn over it.
-  const sec = pattern
+  const frieze = pattern && t.layout === "frieze";
+  const panels = pattern && t.layout === "panels";
+  // Frieze: header/nav/footer and sections sit on the solid page colour; the artwork only
+  // appears in its own bands. Panels: solid panel colour (title strip), artwork washed below.
+  const sec = frieze
     ? { base: bg, a: 0, s: page }
-    : { base: t.panel, a: t.panelOpacity, s: panel };
+    : { base: t.panel, a: panels ? 1 : t.panelOpacity, s: panel };
+  const wash = (ground: string) =>
+    pattern
+      ? `linear-gradient(${rgba(ground, t.panelOpacity)}, ${rgba(ground, t.panelOpacity)}), url("${pattern.file}")`
+      : "none";
   return {
     "--background": bg,
     "--foreground": page.fg,
@@ -290,15 +350,26 @@ export function deriveTheme(t: ThemeInput) {
     "--primary-foreground": accentFg,
     // Page margins (visible beside the menu column on tablets/desktops): the artwork toned
     // down under a wash of the page colour, so it reads as texture rather than noise.
-    "--page-pattern": pattern
+    "--page-pattern": frieze
       ? `linear-gradient(${rgba(bg, 0.8)}, ${rgba(bg, 0.8)}), url("${pattern.file}")`
       : "none",
-    "--page-pattern-size": pattern ? `auto, ${pattern.size}px` : "auto",
-    // Full-strength bands (masthead, footer frieze). Ground = sheet colour, which shows through
-    // artwork with a transparent background (Cobalt & Tangerine, drawn on white).
-    "--band-pattern": pattern ? `url("${pattern.file}")` : "none",
-    "--band-pattern-size": pattern ? `${pattern.size}px` : "auto",
-    "--band-ground": t.card,
+    "--page-pattern-size": frieze ? `auto, ${pattern.size}px` : "auto",
+    // Bands (masthead, footer strip): full strength for frieze, washed for panels. Ground shows
+    // through artwork with a transparent background (Cobalt & Tangerine, drawn on white).
+    "--band-pattern": !pattern
+      ? "none"
+      : panels
+        ? wash(t.panel)
+        : `url("${pattern.file}")`,
+    "--band-pattern-size": !pattern
+      ? "auto"
+      : panels
+        ? `auto, ${pattern.size}px`
+        : `${pattern.size}px`,
+    "--band-ground": panels ? t.panel : t.card,
+    // Panels layout: the artwork washed in the panel colour, between panel border and cards.
+    "--wash-pattern": panels ? wash(t.panel) : "none",
+    "--wash-pattern-size": panels ? `auto, ${pattern.size}px` : "auto",
     "--panel": rgba(sec.base, sec.a),
     "--panel-solid": sec.base,
     "--panel-foreground": sec.s.fg,
@@ -338,10 +409,11 @@ export function checkTheme(t: ThemeInput): ThemeProblem[] {
       message: `Text on background is ${c.toFixed(1)}:1 — needs at least 7:1 so small text stays readable in dim light.`,
     });
   }
-  // Buttons/chips sit on the page or (without a pattern) on panels.
+  const frieze = t.pattern != null && t.layout === "frieze";
+  // Buttons/chips sit on the page or (except in the frieze layout) on panels.
   const a = Math.min(
     contrast(t.accent, t.background),
-    t.pattern ? Infinity : contrast(t.accent, t.panel),
+    frieze ? Infinity : contrast(t.accent, t.panel),
   );
   if (a < 3) {
     problems.push({
@@ -356,9 +428,10 @@ export function checkTheme(t: ThemeInput): ThemeProblem[] {
         "Text on the accent colour would be hard to read — pick a darker or lighter accent.",
     });
   }
-  // With a pattern, sections sit on the page colour (already checked above).
+  // Frieze: sections sit on the page colour (already checked above). Panels: section titles sit
+  // on the solid panel strip next to the artwork, so they need the stronger 7:1.
   const p = contrast(v["--panel-foreground"], t.panel);
-  if (!t.pattern && p < 4.5) {
+  if (!frieze && p < (t.pattern ? 7 : 4.5)) {
     problems.push({
       field: "panel",
       message: `Text on the section panels would be ${p.toFixed(1)}:1 — pick a darker or lighter panel colour.`,

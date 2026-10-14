@@ -51,6 +51,23 @@ describe("theme", () => {
     expect(v["--card-foreground"]).toBe("#162341"); // brand navy text on ivory sheets
   });
 
+  test("panels layout: pale page, artwork washed only inside panels/bands, solid cards", () => {
+    const v = deriveTheme(full(PRESETS.find((p) => p.preset === "navy-pale")!));
+    expect(v["--page-pattern"]).toBe("none"); // no artwork behind the page itself
+    expect(v["--wash-pattern"]).toMatch(
+      /^linear-gradient\(rgb\(238 228 208 \/ 0\.84\).*url\("\/patterns\/navy-burgundy\.webp"\)$/,
+    );
+    expect(v["--panel"]).toMatch(/\/ 1\)$/); // solid title strip
+    expect(v["--card"]).toBe("#fffdf7");
+  });
+
+  test("themes saved before the layout choice keep the frieze layout", () => {
+    expect(readTheme({ pattern: "mint-gold" }).layout).toBe("frieze");
+    expect(readTheme({ pattern: "mint-gold", layout: "evil" }).layout).toBe(
+      "frieze",
+    );
+  });
+
   test("themes saved before panels/cards existed keep the original look", () => {
     const t = readTheme({
       preset: "saffron",

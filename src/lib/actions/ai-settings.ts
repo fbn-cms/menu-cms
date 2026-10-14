@@ -171,15 +171,13 @@ export async function setAiPreferences(input: {
     .safeParse(input);
   if (!parsed.success) return { ok: false, error: "Invalid choice." };
   const v = parsed.data;
-  const { error } = await createSupabaseAdmin()
-    .from("ai_settings")
-    .upsert({
-      restaurant_id: ctx.restaurant.id,
-      provider: v.provider,
-      anthropic_model: v.anthropicModel,
-      openai_model: v.openaiModel,
-      updated_by: ctx.userId,
-    });
+  const { error } = await createSupabaseAdmin().from("ai_settings").upsert({
+    restaurant_id: ctx.restaurant.id,
+    provider: v.provider,
+    anthropic_model: v.anthropicModel,
+    openai_model: v.openaiModel,
+    updated_by: ctx.userId,
+  });
   if (error) {
     return {
       ok: false,
