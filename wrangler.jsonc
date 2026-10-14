@@ -39,6 +39,9 @@
   "env": {
     "demo": {
       "name": "menu-demo",
+      // Workers Paid plan (since 2026-10-14). Cap CPU per request well above real use (≤ ~350 ms
+      // for a full render) so a runaway bug fails fast instead of running up CPU time.
+      "limits": { "cpu_ms": 5000 },
       "ai": { "binding": "AI" },
       "vars": { "AI_TEXT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast" },
       "services": [
@@ -69,6 +72,9 @@
     },
     "production": {
       "name": "menu-prod",
+      // Workers Paid plan (since 2026-10-14). Cap CPU per request well above real use (≤ ~350 ms
+      // for a full render) so a runaway bug fails fast instead of running up CPU time.
+      "limits": { "cpu_ms": 5000 },
       "ai": { "binding": "AI" },
       "vars": { "AI_TEXT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast" },
       "services": [

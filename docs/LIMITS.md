@@ -18,7 +18,22 @@ _Last checked: 2026-10-11. Re-check before go-live; providers change these._
 | vitest                 | 5.0.3                                |                                                                                                                                                           |
 | @playwright/test       | 1.64.0                               |                                                                                                                                                           |
 
-## Cloudflare Workers — Free
+## ⚠️ Correction (2026-10-14): Workers FREE cannot run this app — now on Workers PAID
+
+Phase 0 assumed the 10 ms CPU/request of Workers Free was fine because pages are ISR-cached.
+**That was wrong.** Measured on the live demo:
+
+- Even trivial routes cost 6–22 ms CPU (Next.js/OpenNext runtime overhead); a page render 13–350 ms.
+- Renders after a deploy, an admin save (cache expired) or the 10-minute revalidation were killed
+  ("Worker exceeded CPU time limit", 503), and visitors waiting on that failed revalidation hung
+  ~60 s. 1–2 % of requests failed or hung even at ~2,000 requests/day.
+
+**Decision (owner, 2026-10-14): Workers Paid, US$5/month.** 30 s CPU/request limit (we cap at
+5,000 ms in wrangler.jsonc), 10 M requests + 30 M CPU-ms/month included. Expected bill: the $5
+minimum. This is the one deviation from the "zero recurring cost" constraint.
+Verified after upgrade: all pages 200, no exceeded/hung requests (render CPU 12–347 ms).
+
+## Cloudflare Workers — Free (historical; no longer our plan)
 
 Source: developers.cloudflare.com/workers/platform/limits
 
