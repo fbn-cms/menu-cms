@@ -142,8 +142,9 @@ export default async function ItemPage({
             <div className="mt-2">
               <ItemLiveAvailability {...live} variant="badge" />
             </div>
+            {/* pre-line keeps the owner's line breaks (e.g. "- Ingredients:" lists). */}
             {item.long_description && (
-              <p className="bidi-text mt-4 leading-relaxed">
+              <p className="bidi-text mt-4 leading-relaxed whitespace-pre-line">
                 {item.long_description}
               </p>
             )}
