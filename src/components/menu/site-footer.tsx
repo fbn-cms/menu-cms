@@ -16,7 +16,7 @@ export function SiteFooter({
   const tel = restaurant.phone?.replace(/[^\d+]/g, "");
   const year = new Date().getFullYear();
   return (
-    <footer className="mt-8 border-t px-4 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-sm">
+    <footer className="surface-chrome mt-8 border-t px-4 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-sm">
       {(restaurant.address || restaurant.phone) && (
         <address className="space-y-1 not-italic">
           {restaurant.address && (

@@ -54,7 +54,7 @@ export default async function LocaleLayout({
       className={`${latin.variable} ${persian.variable} antialiased`}
       data-locale={locale}
     >
-      <body className="bg-background text-foreground min-h-dvh">
+      <body className="bg-background text-foreground page-pattern min-h-dvh">
         <a
           href="#menu"
           className="focus:bg-background sr-only focus:not-sr-only focus:fixed focus:start-2 focus:top-2 focus:z-50 focus:rounded-lg focus:p-3"

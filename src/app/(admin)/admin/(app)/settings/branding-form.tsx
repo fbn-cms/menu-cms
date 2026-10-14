@@ -22,7 +22,9 @@ import { imageUrl } from "@/lib/menu/image";
 import {
   checkTheme,
   deriveTheme,
-  isDark,
+  cardsAreDark,
+  PATTERNS,
+  type PatternId,
   PRESETS,
   type ThemeInput,
 } from "@/lib/theme";
@@ -281,6 +283,10 @@ export function BrandingForm({ initial }: { initial: Initial }) {
                       background: p.background,
                       foreground: p.foreground,
                       accent: p.accent,
+                      pattern: p.pattern,
+                      panel: p.panel,
+                      panelOpacity: p.panelOpacity,
+                      card: p.card,
                     })
                   }
                   className={cn(
@@ -289,7 +295,13 @@ export function BrandingForm({ initial }: { initial: Initial }) {
                   )}
                 >
                   <span className="flex -space-x-1.5" aria-hidden="true">
-                    {/* Fixed 3-slot list (colours can repeat, e.g. Classic text = accent). */}
+                    {p.pattern && (
+                      <span
+                        className="size-5 rounded-full border border-black/15"
+                        style={patternSwatch(p.pattern, p.background)}
+                      />
+                    )}
+                    {/* Fixed slots (colours can repeat, e.g. Classic text = accent). */}
                     {[p.background, p.foreground, p.accent].map((c, slot) => (
                       <span
                         key={slot}
@@ -326,6 +338,104 @@ export function BrandingForm({ initial }: { initial: Initial }) {
               value={theme.accent}
               onChange={(v) => set({ preset: "custom", accent: v })}
               invalid={problems.some((p) => p.field === "accent")}
+            />
+          </div>
+
+          {/* Background pattern */}
+          <fieldset>
+            <legend className="mb-1.5 text-sm font-medium">
+              Background pattern
+            </legend>
+            <div
+              role="radiogroup"
+              aria-label="Background pattern"
+              className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+            >
+              {[null, ...PATTERNS.map((x) => x.id)].map((id) => {
+                const on = theme.pattern === id;
+                const label = id
+                  ? PATTERNS.find((x) => x.id === id)!.label
+                  : "None";
+                return (
+                  <button
+                    key={id ?? "none"}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    aria-label={`Pattern: ${label}`}
+                    onClick={() =>
+                      set({
+                        preset: "custom",
+                        pattern: id,
+                        // Over a pattern, panels must be nearly opaque; without one, solid.
+                        panelOpacity: id
+                          ? Math.max(
+                              theme.panelOpacity === 1
+                                ? 0.86
+                                : theme.panelOpacity,
+                              0.75,
+                            )
+                          : 1,
+                      })
+                    }
+                    className={cn(
+                      "flex flex-col gap-1 rounded-xl border-2 p-1.5 text-xs",
+                      on ? "border-foreground" : "border-border",
+                    )}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className="block h-14 w-full rounded-lg border border-black/10"
+                      style={
+                        id
+                          ? patternSwatch(id, theme.background)
+                          : { background: theme.background }
+                      }
+                    />
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          {/* Surfaces */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <ColourField
+                id="panel"
+                label="Section panels"
+                value={theme.panel}
+                onChange={(v) => set({ preset: "custom", panel: v })}
+                invalid={problems.some((p) => p.field === "panel")}
+              />
+              <div className="space-y-1">
+                <Label htmlFor="panel-opacity" className="text-xs">
+                  Panel opacity — {Math.round(theme.panelOpacity * 100)}%
+                </Label>
+                <input
+                  id="panel-opacity"
+                  type="range"
+                  min={theme.pattern ? 75 : 50}
+                  max={100}
+                  step={1}
+                  value={Math.round(theme.panelOpacity * 100)}
+                  onChange={(e) =>
+                    set({
+                      preset: "custom",
+                      panelOpacity: Number(e.target.value) / 100,
+                    })
+                  }
+                  className="accent-foreground h-11 w-full"
+                />
+              </div>
+            </div>
+            <ColourField
+              id="card"
+              label="Dish cards"
+              value={theme.card}
+              onChange={(v) => set({ preset: "custom", card: v })}
+              invalid={problems.some((p) => p.field === "card")}
             />
           </div>
           {problems.length > 0 && (
@@ -372,11 +482,11 @@ export function BrandingForm({ initial }: { initial: Initial }) {
           <div
             style={vars as React.CSSProperties}
             className={cn(
-              "bg-background text-foreground",
-              isDark(theme.background) && "dark",
+              "bg-background text-foreground page-pattern pb-1",
+              cardsAreDark(theme) && "dark",
             )}
           >
-            <div className="flex items-center gap-2 px-4 pt-4">
+            <div className="surface-chrome flex items-center gap-2 px-4 pt-4 pb-2">
               {logoKey && (
                 // eslint-disable-next-line @next/next/no-img-element -- no next/image on Workers
                 <img src={imageUrl(logoKey)} alt="" className="h-9 w-auto" />
@@ -385,12 +495,13 @@ export function BrandingForm({ initial }: { initial: Initial }) {
                 <span className="text-lg font-semibold">{name || "Name"}</span>
               )}
             </div>
-            <div className="flex gap-2 border-b px-4 py-2">
+            <div className="surface-chrome flex gap-2 border-b px-4 py-2">
               <span className="chip chip-active">Starters</span>
               <span className="chip">Mains</span>
             </div>
             {/* Mirrors the public menu: category panel, raised dish cards, availability dot. */}
-            <div className="bg-muted/40 mx-3 my-3 space-y-2.5 rounded-2xl border p-2.5">
+            <div className="surface-panel mx-3 my-3 space-y-2.5 rounded-2xl border p-2.5">
+              <p className="px-1 text-sm font-semibold">Starters</p>
               <PreviewRow
                 dot="bg-emerald-500"
                 title="Kashk-e Bademjan"
@@ -447,7 +558,7 @@ function PreviewRow({
   dot: string;
 }) {
   return (
-    <div className="bg-background flex gap-3 rounded-xl border p-2.5 shadow-md shadow-black/5">
+    <div className="surface-card flex gap-3 rounded-xl border p-2.5 shadow-md shadow-black/5">
       <div className="relative shrink-0">
         <div
           className={cn("bg-muted size-12 rounded-lg", dimmed && "opacity-50")}
@@ -525,4 +636,14 @@ function ColourField({
       </div>
     </div>
   );
+}
+
+/** Small pattern thumbnail over the theme background (transparent artwork shows the colour). */
+function patternSwatch(id: PatternId, background: string): React.CSSProperties {
+  const p = PATTERNS.find((x) => x.id === id)!;
+  return {
+    backgroundColor: background,
+    backgroundImage: `url("${p.file}")`,
+    backgroundSize: `${Math.round(p.size / 2)}px`,
+  };
 }

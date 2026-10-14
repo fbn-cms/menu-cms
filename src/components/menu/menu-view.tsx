@@ -199,7 +199,7 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
   return (
     <div data-live={liveStatus}>
       {/* Sticky category chips. Scrolls horizontally; under RTL the browser mirrors direction. */}
-      <div className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-0 z-20 border-b backdrop-blur">
+      <div className="surface-chrome sticky top-0 z-20 border-b backdrop-blur">
         <nav
           aria-label={messages.categories}
           ref={navRef}
@@ -234,7 +234,7 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
       </div>
 
       {/* Search + filters */}
-      <div className="space-y-3 px-4 pt-4">
+      <div className="surface-chrome space-y-3 px-4 pt-4 pb-3">
         <div className="relative">
           <label htmlFor={searchId} className="sr-only">
             {messages.search}
@@ -352,7 +352,7 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
             data-category
             aria-labelledby={`h-${category.slug}`}
             // Each category is its own rounded panel; dishes sit on it as raised cards.
-            className="bg-muted/40 mx-3 mt-5 scroll-mt-16 rounded-2xl border p-2.5 shadow-sm"
+            className="surface-panel mx-3 mt-5 scroll-mt-16 rounded-2xl border p-2.5 shadow-sm backdrop-blur-sm"
           >
             <h2
               id={`h-${category.slug}`}
@@ -425,7 +425,7 @@ function ItemRow({
       href={`/${locale}/item/${item.slug}`}
       data-availability={item.availability}
       className={cn(
-        "bg-background focus-visible:ring-ring relative flex gap-3 rounded-xl border p-3 shadow-md shadow-black/5 transition-shadow outline-none hover:shadow-lg focus-visible:ring-2",
+        "surface-card focus-visible:ring-ring relative flex gap-3 rounded-xl border p-3 shadow-md shadow-black/5 transition-shadow outline-none hover:shadow-lg focus-visible:ring-2",
         soldOut && "shadow-sm",
       )}
     >

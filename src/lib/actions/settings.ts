@@ -6,7 +6,7 @@ import { requireRole } from "@/lib/auth";
 import { IMAGE_KEY_PATTERN } from "@/lib/images/webp";
 import { menuTag } from "@/lib/menu/fetch";
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { checkTheme, isHex } from "@/lib/theme";
+import { checkTheme, isHex, PATTERNS, type PatternId } from "@/lib/theme";
 
 export type SettingsResult = { ok: boolean; error?: string };
 
@@ -36,6 +36,12 @@ const input = z.object({
     background: hex,
     foreground: hex,
     accent: hex,
+    pattern: z
+      .enum(PATTERNS.map((x) => x.id) as [PatternId, ...PatternId[]])
+      .nullable(),
+    panel: hex,
+    panelOpacity: z.number().min(0.5).max(1),
+    card: hex,
     showName: z.boolean(),
     logoWidth: z.number().int().min(1).max(4096).nullable(),
     logoHeight: z.number().int().min(1).max(4096).nullable(),

@@ -25,7 +25,7 @@ export function SiteHeader({
       ? Math.round((LOGO_HEIGHT * theme.logoWidth) / theme.logoHeight)
       : undefined;
   return (
-    <header className="px-4 pt-2">
+    <header className="surface-chrome px-4 pt-2 pb-1">
       <HeaderShell
         staffLabel={messages.staffLogin}
         switcher={

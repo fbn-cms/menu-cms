@@ -149,6 +149,62 @@
   }
 }
 
+/* Theme surfaces (see src/lib/theme.ts). Each re-scopes the colour variables, so everything
+   inside (text, borders, muted tints, inputs, chips) adapts to that surface automatically.
+   chrome = header / category bar / search / footer; panel = menu section (translucent over a
+   pattern); card = dish (always opaque). Defaults below keep the plain look without a theme. */
+:root {
+  --page-pattern: none;
+  --page-pattern-size: auto;
+  --chrome: var(--background);
+  --chrome-solid: var(--background);
+  --chrome-foreground: var(--foreground);
+  --chrome-muted: var(--muted);
+  --chrome-muted-foreground: var(--muted-foreground);
+  --chrome-border: var(--border);
+  --panel: var(--muted);
+  --panel-solid: var(--muted);
+  --panel-foreground: var(--foreground);
+  --panel-muted: var(--muted);
+  --panel-muted-foreground: var(--muted-foreground);
+  --panel-border: var(--border);
+  --card-muted: var(--muted);
+  --card-muted-foreground: var(--muted-foreground);
+  --card-border: var(--border);
+}
+@utility page-pattern {
+  background-image: var(--page-pattern);
+  background-size: var(--page-pattern-size);
+  background-repeat: repeat;
+}
+@utility surface-chrome {
+  background-color: var(--chrome);
+  --background: var(--chrome-solid);
+  --foreground: var(--chrome-foreground);
+  --muted: var(--chrome-muted);
+  --muted-foreground: var(--chrome-muted-foreground);
+  --border: var(--chrome-border);
+  color: var(--foreground);
+}
+@utility surface-panel {
+  background-color: var(--panel);
+  --background: var(--panel-solid);
+  --foreground: var(--panel-foreground);
+  --muted: var(--panel-muted);
+  --muted-foreground: var(--panel-muted-foreground);
+  --border: var(--panel-border);
+  color: var(--foreground);
+}
+@utility surface-card {
+  background-color: var(--card);
+  --background: var(--card);
+  --foreground: var(--card-foreground);
+  --muted: var(--card-muted);
+  --muted-foreground: var(--card-muted-foreground);
+  --border: var(--card-border);
+  color: var(--foreground);
+}
+
 /* Restaurant-written text (names, descriptions, address) may be English inside a Persian page
    (translation fallback). plaintext orders each paragraph by its own content — punctuation and
    numbers land correctly — while alignment still follows the page direction. */

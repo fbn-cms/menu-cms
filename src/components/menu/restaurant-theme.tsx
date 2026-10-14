@@ -1,4 +1,4 @@
-import { deriveTheme, isDark, readTheme } from "@/lib/theme";
+import { cardsAreDark, deriveTheme, isDark, readTheme } from "@/lib/theme";
 
 /**
  * Applies the owner's colours to the public menu. Values come from readTheme(), which only lets
@@ -20,9 +20,7 @@ export function RestaurantTheme({
     <>
       {/* Also targets .dark: shadcn's .dark block redefines these variables on the wrapper. */}
       <style>{`:root,:root .dark{${css}}:root{color-scheme:${isDark(t.background) ? "dark" : "light"}}`}</style>
-      <div className={isDark(t.background) ? "dark" : undefined}>
-        {children}
-      </div>
+      <div className={cardsAreDark(t) ? "dark" : undefined}>{children}</div>
     </>
   );
 }

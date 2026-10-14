@@ -78,7 +78,7 @@ export default async function ItemPage({
 
   return (
     <RestaurantTheme theme={menu.restaurant.theme}>
-      <header className="flex items-center justify-between gap-2 px-2 py-2">
+      <header className="surface-chrome flex items-center justify-between gap-2 px-2 py-2">
         <Link
           href={`/${locale}/menu/${item.category.slug}`}
           className="hover:bg-muted inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm"
@@ -128,7 +128,7 @@ export default async function ItemPage({
           )}
         </div>
 
-        <article className="space-y-6 px-4 py-5">
+        <article className="surface-card space-y-6 px-4 py-5">
           <div>
             <div className="flex items-start justify-between gap-3">
               <h1 className="bidi-text text-2xl leading-tight font-semibold">
