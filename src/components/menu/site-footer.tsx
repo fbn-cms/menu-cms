@@ -16,7 +16,12 @@ export function SiteFooter({
   const tel = restaurant.phone?.replace(/[^\d+]/g, "");
   const year = new Date().getFullYear();
   return (
-    <footer className="surface-chrome mt-8 border-t px-4 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-sm">
+    <footer className="surface-chrome ornate:mt-14 ornate:border-t-0 ornate:pt-0 ornate:text-center mt-8 border-t px-4 pt-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] text-sm">
+      {/* Ornate themes close the menu with a narrow frieze of the pattern. */}
+      <div
+        aria-hidden="true"
+        className="pattern-band border-primary ornate:block -mx-4 mb-6 hidden h-9 border-y-2"
+      />
       {(restaurant.address || restaurant.phone) && (
         <address className="space-y-1 not-italic">
           {restaurant.address && (
@@ -25,7 +30,7 @@ export function SiteFooter({
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`${messages.address}: ${restaurant.address} (${messages.openInMaps})`}
-              className="flex min-h-11 items-center gap-2 underline-offset-4 hover:underline"
+              className="ornate:justify-center flex min-h-11 items-center gap-2 underline-offset-4 hover:underline"
             >
               <MapPin
                 aria-hidden="true"
@@ -38,7 +43,7 @@ export function SiteFooter({
             <a
               href={`tel:${tel}`}
               aria-label={`${messages.call}: ${restaurant.phone}`}
-              className="flex min-h-11 items-center gap-2 underline-offset-4 hover:underline"
+              className="ornate:justify-center flex min-h-11 items-center gap-2 underline-offset-4 hover:underline"
             >
               <Phone
                 aria-hidden="true"

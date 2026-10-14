@@ -37,13 +37,18 @@ describe("theme", () => {
     },
   );
 
-  test("pattern presets: cards opaque & light, panels translucent, pattern URL set", () => {
+  test("pattern presets: artwork only in bands, sections on the solid page, light sheets", () => {
     const v = deriveTheme(
       full(PRESETS.find((p) => p.preset === "navy-burgundy")!),
     );
-    expect(v["--page-pattern"]).toBe('url("/patterns/navy-burgundy.webp")');
-    expect(v["--panel"]).toMatch(/\/ 0\.86\)$/);
-    expect(v["--card-foreground"]).toBe("#162341"); // brand navy text on ivory cards
+    expect(v["--band-pattern"]).toBe('url("/patterns/navy-burgundy.webp")');
+    // Margins: the artwork under a wash of the page colour.
+    expect(v["--page-pattern"]).toMatch(
+      /^linear-gradient\(.*\/ 0\.8\)\), url\(/,
+    );
+    expect(v["--panel"]).toMatch(/\/ 0\)$/); // no section box over the page
+    expect(v["--chrome"]).toBe("#162341"); // solid header / nav, never over artwork
+    expect(v["--card-foreground"]).toBe("#162341"); // brand navy text on ivory sheets
   });
 
   test("themes saved before panels/cards existed keep the original look", () => {
@@ -70,9 +75,9 @@ describe("theme", () => {
     );
   });
 
-  test("a see-through panel over a pattern is rejected", () => {
-    const t = { ...full(PRESETS.find((p) => p.pattern)!), panelOpacity: 0.6 };
-    expect(checkTheme(t).some((p) => p.field === "panel")).toBe(true);
+  test("a low-contrast dish sheet is rejected", () => {
+    const t = { ...full(PRESETS.find((p) => p.pattern)!), card: "#8090a0" };
+    expect(checkTheme(t).some((p) => p.field === "card")).toBe(true);
   });
 
   test("stored JSON is read defensively (no CSS injection, unknown pattern ignored)", () => {

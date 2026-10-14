@@ -1,10 +1,13 @@
 // Restaurant colour theme. The owner picks a palette (or individual colours) and optionally a
 // background pattern; everything else is derived so the menu always stays readable (WCAG AA).
 //
-// Three surfaces sit on the page background:
+// Surfaces:
 //   chrome — header, category bar, search/filters, footer
-//   panel  — each menu section (Starters, Mains…); translucent over a pattern
-//   card   — each dish; always opaque, never shows the pattern
+//   panel  — each menu section (Starters, Mains…)
+//   card   — the dishes; always opaque
+// With a pattern the layout turns "ornate": the artwork frames the menu (a masthead band, a
+// closing frieze, toned-down margins on wide screens) but never sits behind text. Sections drop
+// their boxes and each one becomes a single opaque sheet of dishes split by hairlines.
 // Client-safe (no Zod).
 
 // ---------------------------------------------------------------- colour maths
@@ -52,19 +55,19 @@ export const PATTERNS: {
     id: "cobalt-tangerine",
     label: "Cobalt & Tangerine",
     file: "/patterns/cobalt-tangerine.webp",
-    size: 250,
+    size: 200,
   },
   {
     id: "mint-gold",
     label: "Mint & Antique Gold",
     file: "/patterns/mint-gold.webp",
-    size: 180,
+    size: 150,
   },
   {
     id: "navy-burgundy",
     label: "Navy & Burgundy",
     file: "/patterns/navy-burgundy.webp",
-    size: 220,
+    size: 180,
   },
 ];
 const isPattern = (v: unknown): v is PatternId =>
@@ -132,7 +135,8 @@ export const PRESETS: (PresetColours & { label: string })[] = [
   },
   { ...plain("midnight", "#121418", "#f3f4f6", "#f59e0b"), label: "Midnight" },
   // Owner-supplied patterns + palettes (2026-10-14). Colours sampled from the artwork, adjusted
-  // for contrast: deep panels for text over the pattern, light opaque cards for the dishes.
+  // for contrast: a deep page colour from the artwork, light opaque sheets for the dishes.
+  // (panel/panelOpacity only matter if the owner later switches the pattern off.)
   {
     preset: "cobalt-tangerine",
     label: "Cobalt & Tangerine",
@@ -265,10 +269,11 @@ export function deriveTheme(t: ThemeInput) {
     contrast("#ffffff", accent) >= contrast("#111111", accent)
       ? "#ffffff"
       : "#111111";
-  // With a pattern, header/nav/footer use the panel look so text never sits on the artwork.
-  const chrome = pattern
-    ? { base: t.panel, a: t.panelOpacity, s: panel }
-    : { base: bg, a: 1, s: page };
+  // Ornate (pattern) layout: header/nav/footer and sections sit on the solid page colour; the
+  // artwork only appears in its own bands, so no text is ever drawn over it.
+  const sec = pattern
+    ? { base: bg, a: 0, s: page }
+    : { base: t.panel, a: t.panelOpacity, s: panel };
   return {
     "--background": bg,
     "--foreground": page.fg,
@@ -283,20 +288,29 @@ export function deriveTheme(t: ThemeInput) {
     "--ring": accent,
     "--primary": accent,
     "--primary-foreground": accentFg,
-    "--page-pattern": pattern ? `url("${pattern.file}")` : "none",
-    "--page-pattern-size": pattern ? `${pattern.size}px` : "auto",
-    "--panel": rgba(t.panel, t.panelOpacity),
-    "--panel-solid": t.panel,
-    "--panel-foreground": panel.fg,
-    "--panel-muted": panel.muted,
-    "--panel-muted-foreground": panel.mutedFg,
-    "--panel-border": panel.border,
-    "--chrome": rgba(chrome.base, chrome.a),
-    "--chrome-solid": chrome.base,
-    "--chrome-foreground": chrome.s.fg,
-    "--chrome-muted": chrome.s.muted,
-    "--chrome-muted-foreground": chrome.s.mutedFg,
-    "--chrome-border": chrome.s.border,
+    // Page margins (visible beside the menu column on tablets/desktops): the artwork toned
+    // down under a wash of the page colour, so it reads as texture rather than noise.
+    "--page-pattern": pattern
+      ? `linear-gradient(${rgba(bg, 0.8)}, ${rgba(bg, 0.8)}), url("${pattern.file}")`
+      : "none",
+    "--page-pattern-size": pattern ? `auto, ${pattern.size}px` : "auto",
+    // Full-strength bands (masthead, footer frieze). Ground = sheet colour, which shows through
+    // artwork with a transparent background (Cobalt & Tangerine, drawn on white).
+    "--band-pattern": pattern ? `url("${pattern.file}")` : "none",
+    "--band-pattern-size": pattern ? `${pattern.size}px` : "auto",
+    "--band-ground": t.card,
+    "--panel": rgba(sec.base, sec.a),
+    "--panel-solid": sec.base,
+    "--panel-foreground": sec.s.fg,
+    "--panel-muted": sec.s.muted,
+    "--panel-muted-foreground": sec.s.mutedFg,
+    "--panel-border": sec.s.border,
+    "--chrome": bg,
+    "--chrome-solid": bg,
+    "--chrome-foreground": page.fg,
+    "--chrome-muted": page.muted,
+    "--chrome-muted-foreground": page.mutedFg,
+    "--chrome-border": page.border,
     "--card": t.card,
     "--card-foreground": card.fg,
     "--card-muted": card.muted,
@@ -324,10 +338,10 @@ export function checkTheme(t: ThemeInput): ThemeProblem[] {
       message: `Text on background is ${c.toFixed(1)}:1 — needs at least 7:1 so small text stays readable in dim light.`,
     });
   }
-  // Buttons/chips sit on the page or on panels.
+  // Buttons/chips sit on the page or (without a pattern) on panels.
   const a = Math.min(
     contrast(t.accent, t.background),
-    contrast(t.accent, t.panel),
+    t.pattern ? Infinity : contrast(t.accent, t.panel),
   );
   if (a < 3) {
     problems.push({
@@ -342,16 +356,9 @@ export function checkTheme(t: ThemeInput): ThemeProblem[] {
         "Text on the accent colour would be hard to read — pick a darker or lighter accent.",
     });
   }
-  // Over a busy pattern, panels must be nearly opaque and their text extra-strong.
-  if (t.pattern && t.panelOpacity < 0.75) {
-    problems.push({
-      field: "panel",
-      message:
-        "With a pattern, panels need at least 75% opacity so text stays readable.",
-    });
-  }
+  // With a pattern, sections sit on the page colour (already checked above).
   const p = contrast(v["--panel-foreground"], t.panel);
-  if (p < (t.pattern ? 7 : 4.5)) {
+  if (!t.pattern && p < 4.5) {
     problems.push({
       field: "panel",
       message: `Text on the section panels would be ${p.toFixed(1)}:1 — pick a darker or lighter panel colour.`,

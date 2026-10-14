@@ -3,6 +3,8 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+/* Pattern themes switch the public menu to the "ornate" layout (see src/lib/theme.ts). */
+@custom-variant ornate (&:where([data-ornate], [data-ornate] *));
 
 @theme inline {
   --color-background: var(--background);
@@ -10,6 +12,7 @@
   --font-sans: var(--font-latin), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, monospace;
   --font-heading: var(--font-sans);
+  --font-display: var(--display-face);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -137,6 +140,15 @@
       var(--font-persian), var(--font-latin), ui-sans-serif, system-ui,
       sans-serif;
   }
+  /* Display face for headings in the ornate layout. Until the web font is cached, the phone's
+     own serif (New York on iOS, Noto Serif on Android) stands in. */
+  :root {
+    --display-face:
+      var(--font-serif), ui-serif, "Iowan Old Style", Georgia, serif;
+  }
+  html[data-locale="fa"] {
+    --display-face: var(--font-persian), ui-sans-serif, system-ui, sans-serif;
+  }
 }
 
 @layer components {
@@ -147,6 +159,13 @@
   .chip-active {
     @apply border-primary bg-primary text-primary-foreground hover:bg-primary/90;
   }
+  /* Ornate layout: categories read as quiet tabs with an accent underline, not filled pills. */
+  :where([data-ornate]) .cat-tab {
+    @apply hover:bg-muted rounded-none border-x-0 border-t-0 border-b-2 border-transparent bg-transparent px-3 tracking-wide;
+  }
+  :where([data-ornate]) .cat-tab.chip-active {
+    @apply border-primary text-foreground hover:bg-muted bg-transparent font-semibold;
+  }
 }
 
 /* Theme surfaces (see src/lib/theme.ts). Each re-scopes the colour variables, so everything
@@ -156,6 +175,9 @@
 :root {
   --page-pattern: none;
   --page-pattern-size: auto;
+  --band-pattern: none;
+  --band-pattern-size: auto;
+  --band-ground: var(--background);
   --chrome: var(--background);
   --chrome-solid: var(--background);
   --chrome-foreground: var(--foreground);
@@ -176,6 +198,14 @@
   background-image: var(--page-pattern);
   background-size: var(--page-pattern-size);
   background-repeat: repeat;
+}
+/* Full-strength artwork for the masthead and footer frieze (never behind text). */
+@utility pattern-band {
+  background-color: var(--band-ground);
+  background-image: var(--band-pattern);
+  background-size: var(--band-pattern-size);
+  background-repeat: repeat;
+  background-position: center top;
 }
 @utility surface-chrome {
   background-color: var(--chrome);

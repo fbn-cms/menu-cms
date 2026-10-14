@@ -267,7 +267,7 @@ export function BrandingForm({ initial }: { initial: Initial }) {
           <div
             role="radiogroup"
             aria-label="Palette"
-            className="grid grid-cols-2 gap-2 sm:grid-cols-3"
+            className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-2"
           >
             {PRESETS.map((p) => {
               const on = theme.preset === p.preset;
@@ -290,7 +290,7 @@ export function BrandingForm({ initial }: { initial: Initial }) {
                     })
                   }
                   className={cn(
-                    "flex min-h-12 items-center gap-2 rounded-xl border-2 px-3 text-sm",
+                    "flex min-h-12 items-center gap-2 rounded-xl border-2 px-3 py-1.5 text-sm",
                     on ? "border-foreground" : "border-border",
                   )}
                 >
@@ -310,7 +310,9 @@ export function BrandingForm({ initial }: { initial: Initial }) {
                       />
                     ))}
                   </span>
-                  {p.label}
+                  <span className="min-w-0 text-start leading-tight">
+                    {p.label}
+                  </span>
                   {on && (
                     <Check aria-hidden="true" className="ms-auto size-4" />
                   )}
@@ -318,7 +320,7 @@ export function BrandingForm({ initial }: { initial: Initial }) {
               );
             })}
           </div>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
             <ColourField
               id="bg"
               label="Background"
@@ -363,21 +365,7 @@ export function BrandingForm({ initial }: { initial: Initial }) {
                     role="radio"
                     aria-checked={on}
                     aria-label={`Pattern: ${label}`}
-                    onClick={() =>
-                      set({
-                        preset: "custom",
-                        pattern: id,
-                        // Over a pattern, panels must be nearly opaque; without one, solid.
-                        panelOpacity: id
-                          ? Math.max(
-                              theme.panelOpacity === 1
-                                ? 0.86
-                                : theme.panelOpacity,
-                              0.75,
-                            )
-                          : 1,
-                      })
-                    }
+                    onClick={() => set({ preset: "custom", pattern: id })}
                     className={cn(
                       "flex flex-col gap-1 rounded-xl border-2 p-1.5 text-xs",
                       on ? "border-foreground" : "border-border",
@@ -399,9 +387,17 @@ export function BrandingForm({ initial }: { initial: Initial }) {
             </div>
           </fieldset>
 
-          {/* Surfaces */}
+          {/* Surfaces. With a pattern, sections sit on the page colour (no panel), so only the
+              dish sheet colour applies. */}
+          {theme.pattern && (
+            <p className="text-muted-foreground text-sm">
+              With a pattern, the artwork frames the menu (top band, footer
+              strip, page margins on wide screens) and never sits behind text.
+              Each section&apos;s dishes sit on one solid sheet.
+            </p>
+          )}
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-2">
+            <div className={cn("space-y-2", theme.pattern && "hidden")}>
               <ColourField
                 id="panel"
                 label="Section panels"
@@ -416,7 +412,7 @@ export function BrandingForm({ initial }: { initial: Initial }) {
                 <input
                   id="panel-opacity"
                   type="range"
-                  min={theme.pattern ? 75 : 50}
+                  min={50}
                   max={100}
                   step={1}
                   value={Math.round(theme.panelOpacity * 100)}
@@ -432,7 +428,7 @@ export function BrandingForm({ initial }: { initial: Initial }) {
             </div>
             <ColourField
               id="card"
-              label="Dish cards"
+              label={theme.pattern ? "Dish sheets" : "Dish cards"}
               value={theme.card}
               onChange={(v) => set({ preset: "custom", card: v })}
               invalid={problems.some((p) => p.field === "card")}
@@ -481,61 +477,75 @@ export function BrandingForm({ initial }: { initial: Initial }) {
         <div className="overflow-hidden rounded-2xl border shadow-sm">
           <div
             style={vars as React.CSSProperties}
+            data-ornate={theme.pattern ? "" : undefined}
             className={cn(
-              "bg-background text-foreground page-pattern pb-1",
+              "bg-background text-foreground pb-1",
               cardsAreDark(theme) && "dark",
             )}
           >
-            <div className="surface-chrome flex items-center gap-2 px-4 pt-4 pb-2">
+            {theme.pattern && (
+              <div
+                aria-hidden="true"
+                className="pattern-band border-primary h-16 border-b-2"
+              />
+            )}
+            <div className="surface-chrome ornate:relative ornate:-mt-7 ornate:mx-auto ornate:w-fit ornate:rounded-xl ornate:ring-1 ornate:ring-primary/70 ornate:shadow-lg ornate:px-5 ornate:py-2 flex items-center gap-2 px-4 pt-4 pb-2">
               {logoKey && (
                 // eslint-disable-next-line @next/next/no-img-element -- no next/image on Workers
                 <img src={imageUrl(logoKey)} alt="" className="h-9 w-auto" />
               )}
               {(theme.showName || !logoKey) && (
-                <span className="text-lg font-semibold">{name || "Name"}</span>
+                <span className="ornate:font-display text-lg font-semibold">
+                  {name || "Name"}
+                </span>
               )}
             </div>
             <div className="surface-chrome flex gap-2 border-b px-4 py-2">
-              <span className="chip chip-active">Starters</span>
-              <span className="chip">Mains</span>
+              <span className="chip cat-tab chip-active">Starters</span>
+              <span className="chip cat-tab">Mains</span>
             </div>
-            {/* Mirrors the public menu: category panel, raised dish cards, availability dot. */}
-            <div className="surface-panel mx-3 my-3 space-y-2.5 rounded-2xl border p-2.5">
-              <p className="px-1 text-sm font-semibold">Starters</p>
-              <PreviewRow
-                dot="bg-emerald-500"
-                title="Kashk-e Bademjan"
-                price="$12.00"
-                badge={
-                  <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400">
-                    <CircleCheck className="size-3.5" aria-hidden="true" />
-                    Available
-                  </span>
-                }
-              />
-              <PreviewRow
-                dot="bg-amber-400"
-                title="Mirza Ghasemi"
-                price="$11.00"
-                badge={
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200">
-                    <Hourglass className="size-3.5" aria-hidden="true" />
-                    Limited
-                  </span>
-                }
-              />
-              <PreviewRow
-                dimmed
-                dot="bg-red-600"
-                title="Soup of the Day"
-                price="$9.00"
-                badge={
-                  <span className="bg-muted text-foreground/80 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium">
-                    <Ban className="size-3.5" aria-hidden="true" />
-                    Sold out today
-                  </span>
-                }
-              />
+            {/* Mirrors the public menu: category panel + raised dish cards, or (ornate) a centred
+                title over one sheet of dishes split by hairlines. */}
+            <div className="surface-panel ornate:border-0 ornate:p-0 ornate:mx-4 ornate:shadow-none mx-3 my-3 space-y-2.5 rounded-2xl border p-2.5">
+              <p className="ornate:font-display ornate:text-center ornate:text-lg px-1 text-sm font-semibold">
+                Starters
+              </p>
+              <div className="ornate:surface-card ornate:divide-y ornate:space-y-0 ornate:overflow-hidden ornate:rounded-xl ornate:border ornate:shadow-lg space-y-2.5">
+                <PreviewRow
+                  dot="bg-emerald-500"
+                  title="Kashk-e Bademjan"
+                  price="$12.00"
+                  badge={
+                    <span className="inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-400">
+                      <CircleCheck className="size-3.5" aria-hidden="true" />
+                      Available
+                    </span>
+                  }
+                />
+                <PreviewRow
+                  dot="bg-amber-400"
+                  title="Mirza Ghasemi"
+                  price="$11.00"
+                  badge={
+                    <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900 dark:bg-amber-950 dark:text-amber-200">
+                      <Hourglass className="size-3.5" aria-hidden="true" />
+                      Limited
+                    </span>
+                  }
+                />
+                <PreviewRow
+                  dimmed
+                  dot="bg-red-600"
+                  title="Soup of the Day"
+                  price="$9.00"
+                  badge={
+                    <span className="bg-muted text-foreground/80 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium">
+                      <Ban className="size-3.5" aria-hidden="true" />
+                      Sold out today
+                    </span>
+                  }
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -558,7 +568,7 @@ function PreviewRow({
   dot: string;
 }) {
   return (
-    <div className="surface-card flex gap-3 rounded-xl border p-2.5 shadow-md shadow-black/5">
+    <div className="surface-card ornate:rounded-none ornate:border-0 ornate:shadow-none flex gap-3 rounded-xl border p-2.5 shadow-md shadow-black/5">
       <div className="relative shrink-0">
         <div
           className={cn("bg-muted size-12 rounded-lg", dimmed && "opacity-50")}

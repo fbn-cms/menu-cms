@@ -3,6 +3,7 @@ import type { Messages } from "@/i18n/t";
 import { imageUrl } from "@/lib/menu/image";
 import type { Menu } from "@/lib/menu/types";
 import { readTheme } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 import { HeaderShell } from "./header-shell";
 import { LanguageSwitcher } from "./language-switcher";
 
@@ -24,9 +25,13 @@ export function SiteHeader({
     logo && theme.logoWidth && theme.logoHeight
       ? Math.round((LOGO_HEIGHT * theme.logoWidth) / theme.logoHeight)
       : undefined;
+  const ornate = theme.pattern != null;
   return (
-    <header className="surface-chrome px-4 pt-2 pb-1">
+    <header
+      className={cn("surface-chrome", ornate ? "pb-2" : "px-4 pt-2 pb-1")}
+    >
       <HeaderShell
+        ornate={ornate}
         staffLabel={messages.staffLogin}
         switcher={
           <LanguageSwitcher current={locale} label={messages.language} />
@@ -46,7 +51,13 @@ export function SiteHeader({
               />
             )}
             {(theme.showName || !logo) && (
-              <p className="truncate text-2xl font-semibold tracking-tight">
+              <p
+                className={cn(
+                  "truncate text-2xl font-semibold tracking-tight",
+                  ornate &&
+                    "font-display max-w-full text-[1.75rem] leading-tight tracking-normal whitespace-normal",
+                )}
+              >
                 {restaurant.name}
               </p>
             )}
@@ -54,7 +65,13 @@ export function SiteHeader({
         }
       />
       {restaurant.banner_message && (
-        <p role="note" className="bg-muted mt-3 rounded-xl px-4 py-3 text-sm">
+        <p
+          role="note"
+          className={cn(
+            "bg-muted mt-3 rounded-xl px-4 py-3 text-sm",
+            ornate && "mx-4 text-center",
+          )}
+        >
           {restaurant.banner_message}
         </p>
       )}

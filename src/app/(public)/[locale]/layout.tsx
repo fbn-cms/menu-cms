@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
-import { Geist, Vazirmatn } from "next/font/google";
+import { Fraunces, Geist, Vazirmatn } from "next/font/google";
 import { isLocale, localeDir, locales } from "@/i18n/config";
 import { getMessages } from "@/i18n/t";
 import { publicEnv } from "@/lib/env";
@@ -18,6 +18,16 @@ const latin = Geist({
 const persian = Vazirmatn({
   variable: "--font-persian",
   subsets: ["arabic", "latin"],
+  display: "optional",
+  preload: false,
+});
+
+// Serif display face for headings in pattern ("ornate") themes. Not preloaded, so plain themes
+// never download it; "optional" means no swap/layout shift (system serif until cached).
+const serif = Fraunces({
+  variable: "--font-serif",
+  subsets: ["latin"],
+  weight: "600",
   display: "optional",
   preload: false,
 });
@@ -51,7 +61,7 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       dir={localeDir(locale)}
-      className={`${latin.variable} ${persian.variable} antialiased`}
+      className={`${latin.variable} ${persian.variable} ${serif.variable} antialiased`}
       data-locale={locale}
     >
       <body className="bg-background text-foreground page-pattern min-h-dvh">

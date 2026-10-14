@@ -206,7 +206,7 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
           className="no-scrollbar flex gap-2 overflow-x-auto px-4 py-2"
         >
           {categorySlug && (
-            <Link href={`/${locale}/menu`} className="chip">
+            <Link href={`/${locale}/menu`} className="chip cat-tab">
               {messages.fullMenu}
             </Link>
           )}
@@ -224,7 +224,10 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
                 aria-current={
                   active ? (categorySlug ? "page" : "location") : undefined
                 }
-                className={cn("bidi-text chip", active && "chip-active")}
+                className={cn(
+                  "bidi-text chip cat-tab",
+                  active && "chip-active",
+                )}
               >
                 {c.name}
               </Link>
@@ -351,12 +354,14 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
             id={`c-${category.slug}`}
             data-category
             aria-labelledby={`h-${category.slug}`}
-            // Each category is its own rounded panel; dishes sit on it as raised cards.
-            className="surface-panel mx-3 mt-5 scroll-mt-16 rounded-2xl border p-2.5 shadow-sm backdrop-blur-sm"
+            // Plain themes: each category is its own rounded panel; dishes sit on it as raised
+            // cards. Ornate: no box — a centred title, then one opaque sheet split by hairlines.
+            className="surface-panel ornate:mx-4 ornate:mt-8 ornate:rounded-none ornate:border-0 ornate:p-0 ornate:shadow-none ornate:backdrop-blur-none mx-3 mt-5 scroll-mt-16 rounded-2xl border p-2.5 shadow-sm backdrop-blur-sm"
           >
+            <Ornament />
             <h2
               id={`h-${category.slug}`}
-              className="bidi-text text-xl font-semibold"
+              className="bidi-text ornate:font-display ornate:text-center ornate:text-[1.7rem] ornate:leading-tight text-xl font-semibold"
             >
               {categorySlug ? (
                 category.name
@@ -367,11 +372,11 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
               )}
             </h2>
             {category.description && (
-              <p className="bidi-text text-muted-foreground mt-1 text-sm">
+              <p className="bidi-text text-muted-foreground ornate:mx-auto ornate:mt-2 ornate:max-w-md ornate:text-center mt-1 text-sm">
                 {category.description}
               </p>
             )}
-            <ul className="mt-3 space-y-3">
+            <ul className="ornate:surface-card ornate:mt-5 ornate:space-y-0 ornate:divide-y ornate:overflow-hidden ornate:rounded-2xl ornate:border ornate:shadow-xl ornate:shadow-black/25 mt-3 space-y-3">
               {category.items.map((item) => (
                 <li
                   key={item.id}
@@ -391,6 +396,20 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
           </section>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** Small accent rule above an ornate section title: line — diamond — line. */
+function Ornament() {
+  return (
+    <div
+      aria-hidden="true"
+      className="text-primary ornate:flex mb-2 hidden items-center justify-center gap-2"
+    >
+      <span className="h-px w-10 bg-current opacity-70" />
+      <span className="size-1.5 rotate-45 bg-current" />
+      <span className="h-px w-10 bg-current opacity-70" />
     </div>
   );
 }
@@ -425,8 +444,9 @@ function ItemRow({
       href={`/${locale}/item/${item.slug}`}
       data-availability={item.availability}
       className={cn(
-        "surface-card focus-visible:ring-ring relative flex gap-3 rounded-xl border p-3 shadow-md shadow-black/5 transition-shadow outline-none hover:shadow-lg focus-visible:ring-2",
-        soldOut && "shadow-sm",
+        "surface-card focus-visible:ring-ring relative flex gap-3 rounded-xl border p-3 shadow-md shadow-black/5 transition-shadow outline-none hover:shadow-lg focus-visible:ring-2 focus-visible:ring-inset",
+        "ornate:rounded-none ornate:border-0 ornate:px-4 ornate:py-4 ornate:shadow-none ornate:hover:bg-muted ornate:hover:shadow-none ornate:transition-colors",
+        soldOut && "ornate:shadow-none shadow-sm",
       )}
     >
       <div className="relative shrink-0">
