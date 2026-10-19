@@ -91,6 +91,7 @@ test.describe("admin access", () => {
       "Dishes",
       "Categories",
       "Labels",
+      "QR code",
     ]);
     await page.goto("/admin/team");
     await expect(page).toHaveURL(/\/admin$/);
@@ -106,6 +107,7 @@ test.describe("admin access", () => {
       "Dishes",
       "Categories",
       "Labels",
+      "QR code",
       "Team",
       "Settings",
       "Audit log",

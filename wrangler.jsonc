@@ -87,7 +87,14 @@
       "vars": {
         "AI_TEXT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
         "SUPABASE_URL": "https://jbmdnogghrykaelymnny.supabase.co",
+        "CANONICAL_HOST": "flavoursbynajla.app",
       },
+      // The live address. workers.dev stays on (spec §11): it 301s to CANONICAL_HOST.
+      "routes": [
+        { "pattern": "flavoursbynajla.app", "custom_domain": true },
+        { "pattern": "www.flavoursbynajla.app", "custom_domain": true },
+      ],
+      "workers_dev": true,
       "services": [
         { "binding": "WORKER_SELF_REFERENCE", "service": "menu-prod" },
       ],
