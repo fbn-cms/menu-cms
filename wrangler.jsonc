@@ -89,7 +89,7 @@
         "SUPABASE_URL": "https://jbmdnogghrykaelymnny.supabase.co",
         "CANONICAL_HOST": "flavoursbynajla.app",
       },
-      // The live address. workers.dev stays on (spec §11): it 301s to CANONICAL_HOST.
+      // The live address (www. 301s to CANONICAL_HOST). workers.dev stays on, unredirected, as a test address.
       "routes": [
         { "pattern": "flavoursbynajla.app", "custom_domain": true },
         { "pattern": "www.flavoursbynajla.app", "custom_domain": true },

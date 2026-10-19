@@ -1,7 +1,7 @@
 // Custom Worker entry: the OpenNext app (fetch + its Durable Objects) plus the hourly cron.
 // wrangler.jsonc "main" points here. Only the photo cleanup is scheduled for now.
-// CANONICAL_HOST (production only): every other host (www., the workers.dev address) gets a
-// permanent redirect, so links and any code printed before the move keep working (spec §11).
+// CANONICAL_HOST (production only): www.<host> gets a permanent redirect to it. The workers.dev
+// address is NOT redirected: the owner uses it as a separate test address (2026-10-19).
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- absent until `opennextjs-cloudflare build`
 // @ts-ignore `.open-next/worker.js` is generated at build time
 import { default as app } from "./.open-next/worker.js";
@@ -31,7 +31,7 @@ const localHour = (d: Date) =>
 export default {
   fetch(request: Request, env: Env, ctx: ExecutionContext) {
     const url = new URL(request.url);
-    if (env.CANONICAL_HOST && url.hostname !== env.CANONICAL_HOST) {
+    if (env.CANONICAL_HOST && url.hostname === `www.${env.CANONICAL_HOST}`) {
       url.hostname = env.CANONICAL_HOST;
       url.protocol = "https:";
       url.port = "";
