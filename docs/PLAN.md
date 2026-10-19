@@ -48,6 +48,9 @@ Deploy      —                         auto on merge to main         manual wor
   served by `/img/[...key]` with immutable caching.
 - **Crons**: a single hourly trigger per Worker dispatching: keep-alive (every run),
   availability expiry (at 04:00 restaurant-local), orphan image cleanup (03:00 local).
+  Done: `worker.ts` `scheduled()` → 03:00 Toronto deletes **unsaved uploads only** (R2 image
+  files > 24 h old that no dish/category/logo uses). Owner decision 2026-10-19: replaced or
+  removed photos are **kept**; `image_deletions` is treated as a keep-list, never emptied.
 - **Backups**: GitHub Action nightly `pg_dump` of each DB → R2, 30-day retention.
 
 ## Open questions (need your answer before / during the phases)

@@ -5,7 +5,8 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "menu-local",
   "account_id": "5681c6743fb9bf1f3bbe0aa32faffd3b",
-  "main": ".open-next/worker.js",
+  // worker.ts = the OpenNext app + the hourly scheduled() handler.
+  "main": "worker.ts",
   "compatibility_date": "2026-09-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
@@ -13,7 +14,11 @@
   // Workers AI (free 10,000 neurons/day) powers "Write with AI" / "Translate" in the CMS.
   // Bound only in demo/production below: it has no local emulator and would force a remote
   // session for every local run. Locally, AI_FAKE=1 (.env.local) returns canned text.
-  "vars": { "AI_TEXT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast" },
+  // SUPABASE_URL: for the cron (it runs outside Next, so NEXT_PUBLIC_* isn't inlined there).
+  "vars": {
+    "AI_TEXT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    "SUPABASE_URL": "http://127.0.0.1:54321",
+  },
   "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "menu-local" }],
   "r2_buckets": [
     { "binding": "MENU_BUCKET", "bucket_name": "menu-local-images" },
@@ -43,7 +48,10 @@
       // for a full render) so a runaway bug fails fast instead of running up CPU time.
       "limits": { "cpu_ms": 5000 },
       "ai": { "binding": "AI" },
-      "vars": { "AI_TEXT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast" },
+      "vars": {
+        "AI_TEXT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "SUPABASE_URL": "https://xnzzyoqofliwhpmzegps.supabase.co",
+      },
       "services": [
         { "binding": "WORKER_SELF_REFERENCE", "service": "menu-demo" },
       ],
@@ -66,7 +74,7 @@
           { "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" },
         ],
       },
-      // One hourly trigger per Worker; the handler dispatches keep-alive, expiry, cleanup.
+      // One hourly trigger per Worker; worker.ts scheduled() runs the 03:00 photo cleanup.
       // (Free plan: 5 cron triggers per account.)
       "triggers": { "crons": ["0 * * * *"] },
     },
@@ -76,7 +84,10 @@
       // for a full render) so a runaway bug fails fast instead of running up CPU time.
       "limits": { "cpu_ms": 5000 },
       "ai": { "binding": "AI" },
-      "vars": { "AI_TEXT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast" },
+      "vars": {
+        "AI_TEXT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+        "SUPABASE_URL": "https://jbmdnogghrykaelymnny.supabase.co",
+      },
       "services": [
         { "binding": "WORKER_SELF_REFERENCE", "service": "menu-prod" },
       ],
