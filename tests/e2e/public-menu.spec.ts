@@ -16,7 +16,7 @@ const sql = (statement: string) =>
 const itemNames = (page: Page, category: string) =>
   page.locator(`section#c-${category} h3`).allTextContents();
 
-/** The last tab: everything, sold-out dishes included. */
+/** The second tab: everything, sold-out dishes included. */
 async function openFullMenu(page: Page, locale: string) {
   await page.goto(`/${locale}/menu#full`);
   await expect(page.locator('nav button[aria-pressed="true"]')).toHaveText(
@@ -126,7 +126,7 @@ test.describe("public menu", () => {
 });
 
 test.describe("Today's menu (default view)", () => {
-  test("opens first, hides sold-out dishes; Full menu is the last tab", async ({
+  test("opens first, hides sold-out dishes; Full menu is the second tab", async ({
     page,
   }) => {
     await page.goto("/en/menu");
@@ -136,7 +136,7 @@ test.describe("Today's menu (default view)", () => {
       "aria-pressed",
       "true",
     );
-    await expect(tabs.locator(".chip").last()).toHaveText("Full menu");
+    await expect(tabs.locator(".chip").nth(1)).toHaveText("Full menu");
     await expect(page.getByText("Sold out today")).toHaveCount(0);
     expect(await itemNames(page, "starters")).not.toContain("Soup of the Day");
 
@@ -172,7 +172,7 @@ test.describe("Today's menu (default view)", () => {
     }
   });
 
-  test("a category page links to Today's menu first and Full menu last", async ({
+  test("a category page links to Today's menu first and Full menu second", async ({
     page,
   }) => {
     await page.goto("/en/menu/starters");
@@ -180,8 +180,8 @@ test.describe("Today's menu (default view)", () => {
       .getByRole("navigation", { name: "Categories" })
       .locator(".chip");
     await expect(tabs.first()).toHaveText("Today's menu");
-    await expect(tabs.last()).toHaveText("Full menu");
-    await tabs.last().click();
+    await expect(tabs.nth(1)).toHaveText("Full menu");
+    await tabs.nth(1).click();
     await expect(page).toHaveURL(/\/en\/menu#full$/);
     await expect(
       page.getByRole("button", { name: "Full menu", pressed: true }),

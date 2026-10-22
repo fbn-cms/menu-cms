@@ -258,7 +258,7 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
           ref={navRef}
           className="no-scrollbar flex gap-2 overflow-x-auto px-4 py-2"
         >
-          {/* First tab: Today's menu (default). Last tab: Full menu. */}
+          {/* View tabs first: Today's menu (default), then Full menu; sections follow. */}
           {categorySlug ? (
             <Link href={`/${locale}/menu`} className="chip cat-tab">
               {messages.todaysMenu}
@@ -272,6 +272,21 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
               className={cn("chip cat-tab", today && "chip-active")}
             >
               {messages.todaysMenu}
+            </button>
+          )}
+          {categorySlug ? (
+            <Link href={`/${locale}/menu#full`} className="chip cat-tab">
+              {messages.fullMenu}
+            </Link>
+          ) : (
+            <button
+              type="button"
+              data-view="full"
+              aria-pressed={!today}
+              onClick={() => chooseView("full")}
+              className={cn("chip cat-tab", !today && "chip-active")}
+            >
+              {messages.fullMenu}
             </button>
           )}
           {menu.categories
@@ -302,21 +317,6 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
                 </Link>
               );
             })}
-          {categorySlug ? (
-            <Link href={`/${locale}/menu#full`} className="chip cat-tab">
-              {messages.fullMenu}
-            </Link>
-          ) : (
-            <button
-              type="button"
-              data-view="full"
-              aria-pressed={!today}
-              onClick={() => chooseView("full")}
-              className={cn("chip cat-tab", !today && "chip-active")}
-            >
-              {messages.fullMenu}
-            </button>
-          )}
         </nav>
       </div>
 
