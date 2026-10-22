@@ -74,7 +74,7 @@
           { "name": "NEXT_CACHE_DO_QUEUE", "class_name": "DOQueueHandler" },
         ],
       },
-      // One hourly trigger per Worker; worker.ts scheduled() runs the 03:00 photo cleanup.
+      // One hourly trigger per Worker; worker.ts scheduled(): availability expiry every hour, photo cleanup at 03:00.
       // (Free plan: 5 cron triggers per account.)
       "triggers": { "crons": ["0 * * * *"] },
     },

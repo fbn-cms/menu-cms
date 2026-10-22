@@ -22,6 +22,10 @@ export default async function DashboardPage() {
       .select("id, name, availability, availability_note")
       .neq("availability", "available")
       .eq("is_published", true)
+      // Hide expired "until" times (diners already see those as available).
+      .or(
+        `availability_until.is.null,availability_until.gt.${new Date().toISOString()}`,
+      )
       .order("availability", { ascending: false })
       .order("name"),
     supabase

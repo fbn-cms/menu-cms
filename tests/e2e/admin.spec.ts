@@ -160,6 +160,20 @@ test.describe("86 board", () => {
     ).not.toBe("0");
   });
 
+  test("a sold-out time that has passed shows as available, before the hourly job runs", async ({
+    page,
+  }) => {
+    sql(
+      "update items set availability='unavailable', availability_until=now() - interval '1 hour' where slug='joojeh-kebab'",
+    );
+    await signIn(page, "staff@demo.test");
+    const row = page.getByRole("listitem").filter({ hasText: "Joojeh Kebab" });
+    await expect(row.getByRole("radio", { name: "Available" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+  });
+
   test("staff toggle Chef's pick on the 86 board; an open menu shows it live", async ({
     page,
     browser,

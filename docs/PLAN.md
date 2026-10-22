@@ -51,6 +51,9 @@ Deploy      —                         auto on merge to main         manual wor
   Done: `worker.ts` `scheduled()` → 03:00 Toronto deletes **unsaved uploads only** (R2 image
   files > 24 h old that no dish/category/logo uses). Owner decision 2026-10-19: replaced or
   removed photos are **kept**; `image_deletions` is treated as a keep-list, never emptied.
+  Done 2026-10-22: availability expiry runs **every hour** (end-of-service times aren't only
+  04:00); the 86 board and dashboard also apply the expiry themselves, so they never disagree
+  with the public menu if the job is late.
 - **Backups**: GitHub Action nightly `pg_dump` of each DB → R2, 30-day retention.
 
 ## Open questions (need your answer before / during the phases)

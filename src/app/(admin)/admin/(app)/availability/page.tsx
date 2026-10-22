@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getStaffContext } from "@/lib/auth";
+import { withEffectiveAvailability } from "@/lib/availability/effective";
 import { createSupabaseServer } from "@/lib/supabase/server";
 import { Board, type BoardCategory } from "./board";
 
@@ -27,7 +28,10 @@ export default async function AvailabilityPage() {
     .map((c) => ({
       id: c.id,
       name: c.name,
-      items: (items ?? []).filter((i) => i.category_id === c.id),
+      // Same view as diners: an expired "until" shows as available right away.
+      items: (items ?? [])
+        .filter((i) => i.category_id === c.id)
+        .map((i) => withEffectiveAvailability(i)),
     }))
     .filter((c) => c.items.length > 0);
 

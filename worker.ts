@@ -1,10 +1,11 @@
 // Custom Worker entry: the OpenNext app (fetch + its Durable Objects) plus the hourly cron.
-// wrangler.jsonc "main" points here. Only the photo cleanup is scheduled for now.
+// wrangler.jsonc "main" points here. Hourly: expire "sold out until …" flags; 03:00: photo cleanup.
 // CANONICAL_HOST (production only): www.<host> gets a permanent redirect to it. The workers.dev
 // address is NOT redirected: the owner uses it as a separate test address (2026-10-19).
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- absent until `opennextjs-cloudflare build`
 // @ts-ignore `.open-next/worker.js` is generated at build time
 import { default as app } from "./.open-next/worker.js";
+import { expireAvailability } from "./src/lib/cron/expire-availability";
 import { deleteUnsavedUploads } from "./src/lib/cron/unsaved-uploads";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- absent until `opennextjs-cloudflare build`
@@ -42,17 +43,19 @@ export default {
 
   async scheduled(controller: ScheduledController, env: Env) {
     const now = new Date(controller.scheduledTime);
-    if (localHour(now) !== 3) return; // once a night, 03:00 local
     if (!env.SUPABASE_URL || !env.SUPABASE_SECRET_KEY) {
-      console.warn(
-        "cron: unsaved-photo cleanup skipped (Supabase not configured)",
-      );
+      console.warn("cron: skipped (Supabase not configured)");
       return;
     }
+    const { SUPABASE_URL: supabaseUrl, SUPABASE_SECRET_KEY: secretKey } = env;
+    // Every hour: dishes whose "until" time has passed go back on sale.
+    const expired = await expireAvailability(supabaseUrl, secretKey);
+    console.log(`cron: availability expired ${expired}`);
+    if (localHour(now) !== 3) return; // once a night, 03:00 local
     const result = await deleteUnsavedUploads({
       bucket: env.MENU_BUCKET,
-      supabaseUrl: env.SUPABASE_URL,
-      secretKey: env.SUPABASE_SECRET_KEY,
+      supabaseUrl,
+      secretKey,
       now,
     });
     console.log(
