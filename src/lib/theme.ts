@@ -220,7 +220,7 @@ export const PRESETS: (PresetColours & { label: string })[] = [
     pattern: "navy-burgundy",
     layout: "panels",
     panel: "#eee4d0",
-    panelOpacity: 0.84,
+    panelOpacity: 0.69, // owner asked for 15 points less wash (2026-10-22)
     card: "#fffdf7",
   },
 ];

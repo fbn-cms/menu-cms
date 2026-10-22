@@ -55,7 +55,7 @@ describe("theme", () => {
     const v = deriveTheme(full(PRESETS.find((p) => p.preset === "navy-pale")!));
     expect(v["--page-pattern"]).toBe("none"); // no artwork behind the page itself
     expect(v["--wash-pattern"]).toMatch(
-      /^linear-gradient\(rgb\(238 228 208 \/ 0\.84\).*url\("\/patterns\/navy-burgundy\.webp"\)$/,
+      /^linear-gradient\(rgb\(238 228 208 \/ 0\.69\).*url\("\/patterns\/navy-burgundy\.webp"\)$/,
     );
     expect(v["--panel"]).toMatch(/\/ 1\)$/); // solid title strip
     expect(v["--card"]).toBe("#fffdf7");
