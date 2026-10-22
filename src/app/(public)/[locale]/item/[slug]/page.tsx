@@ -115,10 +115,9 @@ export default async function ItemPage({
               height={1200}
               fetchPriority="high"
               decoding="async"
-              className={cn(
-                "size-full object-cover",
-                item.availability === "unavailable" && "grayscale",
-              )}
+              // Full colour even when sold out (owner's choice): only the menu list greys it;
+              // here the banner and badge say it's unavailable.
+              className="size-full object-cover"
             />
           ) : (
             <div className="text-muted-foreground/70 flex size-full flex-col items-center justify-center gap-2">
