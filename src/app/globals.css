@@ -162,12 +162,19 @@
   .chip-active {
     @apply border-primary bg-primary text-primary-foreground hover:bg-primary/90;
   }
+  /* "You are here" while scrolling the menu page: outlined, so the filled tab stays the view. */
+  .chip-current {
+    @apply border-primary text-foreground font-medium;
+  }
   /* Ornate layout: categories read as quiet tabs with an accent underline, not filled pills. */
   :where([data-ornate]) .cat-tab {
     @apply hover:bg-muted rounded-none border-x-0 border-t-0 border-b-2 border-transparent bg-transparent px-3 tracking-wide;
   }
   :where([data-ornate]) .cat-tab.chip-active {
     @apply border-primary text-foreground hover:bg-muted bg-transparent font-semibold;
+  }
+  :where([data-ornate]) .cat-tab.chip-current {
+    @apply border-primary/45;
   }
 }
 

@@ -86,6 +86,45 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
   );
   const liveStatus = useLiveAvailability(restaurant.id, onPatch);
 
+  // ---------------------------------------------------------------- view
+  // The menu page opens on "Today's menu" (sold-out dishes hidden); "Full menu" (the last tab)
+  // shows everything. Category pages always show the whole category.
+  const [view, setView] = useState<"today" | "full">("today");
+  const holdChipScroll = useRef(false);
+  // `/menu#full` (the Full menu tab on category pages) opens straight on the full view.
+  useEffect(() => {
+    if (categorySlug) return;
+    const fromHash = () => {
+      if (window.location.hash === "#full") setView("full");
+    };
+    const frame = requestAnimationFrame(fromHash);
+    window.addEventListener("hashchange", fromHash);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("hashchange", fromHash);
+    };
+  }, [categorySlug]);
+  const today = !categorySlug && view === "today";
+  const chooseView = (next: "today" | "full") => {
+    setView(next);
+    if (next === "today") setAvailableOnly(false);
+    const { pathname, search } = window.location;
+    history.replaceState(
+      null,
+      "",
+      `${pathname}${search}${next === "full" ? "#full" : ""}`,
+    );
+    window.scrollTo({ top: 0 });
+    // Keep the tab just chosen in view; scroll-spy re-centring waits until the page settles.
+    holdChipScroll.current = true;
+    setTimeout(() => (holdChipScroll.current = false), 1500);
+    requestAnimationFrame(() =>
+      navRef.current
+        ?.querySelector<HTMLElement>(`[data-view="${next}"]`)
+        ?.scrollIntoView({ block: "nearest", inline: "nearest" }),
+    );
+  };
+
   const categories = useMemo<MenuCategory[]>(() => {
     const source = categorySlug
       ? menu.categories.filter((c) => c.slug === categorySlug)
@@ -110,6 +149,19 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
       ),
     }));
   }, [menu.categories, categorySlug, patches]);
+  // Today's menu: hide what's sold out now (live updates included), and sections left empty.
+  const shown = useMemo(
+    () =>
+      today
+        ? categories
+            .map((c) => ({
+              ...c,
+              items: c.items.filter((i) => i.availability !== "unavailable"),
+            }))
+            .filter((c) => c.items.length > 0)
+        : categories,
+    [categories, today],
+  );
 
   // ---------------------------------------------------------------- search & filters
   const [query, setQuery] = useState("");
@@ -142,10 +194,10 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
           item.price_cents >= PRICE_LOW &&
           item.price_cents <= PRICE_HIGH) ||
         (price === "over" && item.price_cents > PRICE_HIGH));
-    return categories
+    return shown
       .map((c) => ({ ...c, items: c.items.filter(match) }))
       .filter((c) => c.items.length > 0 || !filtersActive);
-  }, [categories, query, tagFilter, availableOnly, price, filtersActive]);
+  }, [shown, query, tagFilter, availableOnly, price, filtersActive]);
   const resultCount = visible.reduce((n, c) => n + c.items.length, 0);
 
   const clearFilters = () => {
@@ -184,6 +236,7 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
     return () => observer.disconnect();
   }, [visible, categorySlug]);
   useEffect(() => {
+    if (holdChipScroll.current) return;
     navRef.current
       ?.querySelector<HTMLElement>(`[data-chip="${activeSlug}"]`)
       ?.scrollIntoView({
@@ -205,34 +258,65 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
           ref={navRef}
           className="no-scrollbar flex gap-2 overflow-x-auto px-4 py-2"
         >
-          {categorySlug && (
+          {/* First tab: Today's menu (default). Last tab: Full menu. */}
+          {categorySlug ? (
             <Link href={`/${locale}/menu`} className="chip cat-tab">
+              {messages.todaysMenu}
+            </Link>
+          ) : (
+            <button
+              type="button"
+              data-view="today"
+              aria-pressed={today}
+              onClick={() => chooseView("today")}
+              className={cn("chip cat-tab", today && "chip-active")}
+            >
+              {messages.todaysMenu}
+            </button>
+          )}
+          {menu.categories
+            // On Today's menu, only sections that have something to serve.
+            .filter((c) => !today || shown.some((s) => s.id === c.id))
+            .map((c) => {
+              const active = categorySlug
+                ? c.slug === categorySlug
+                : c.slug === activeSlug;
+              return (
+                <Link
+                  key={c.id}
+                  data-chip={c.slug}
+                  href={
+                    categorySlug ? `/${locale}/menu/${c.slug}` : `#c-${c.slug}`
+                  }
+                  aria-current={
+                    active ? (categorySlug ? "page" : "location") : undefined
+                  }
+                  className={cn(
+                    "bidi-text chip cat-tab",
+                    // A category page is a view of its own (filled); on the menu page the
+                    // section you're scrolled to is only outlined, so the view tab stays clear.
+                    active && (categorySlug ? "chip-active" : "chip-current"),
+                  )}
+                >
+                  {c.name}
+                </Link>
+              );
+            })}
+          {categorySlug ? (
+            <Link href={`/${locale}/menu#full`} className="chip cat-tab">
               {messages.fullMenu}
             </Link>
+          ) : (
+            <button
+              type="button"
+              data-view="full"
+              aria-pressed={!today}
+              onClick={() => chooseView("full")}
+              className={cn("chip cat-tab", !today && "chip-active")}
+            >
+              {messages.fullMenu}
+            </button>
           )}
-          {menu.categories.map((c) => {
-            const active = categorySlug
-              ? c.slug === categorySlug
-              : c.slug === activeSlug;
-            return (
-              <Link
-                key={c.id}
-                data-chip={c.slug}
-                href={
-                  categorySlug ? `/${locale}/menu/${c.slug}` : `#c-${c.slug}`
-                }
-                aria-current={
-                  active ? (categorySlug ? "page" : "location") : undefined
-                }
-                className={cn(
-                  "bidi-text chip cat-tab",
-                  active && "chip-active",
-                )}
-              >
-                {c.name}
-              </Link>
-            );
-          })}
         </nav>
       </div>
 
@@ -260,14 +344,16 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
           aria-label={messages.filters}
           className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4"
         >
-          <button
-            type="button"
-            aria-pressed={availableOnly}
-            onClick={() => setAvailableOnly((v) => !v)}
-            className={cn("chip", availableOnly && "chip-active")}
-          >
-            {messages.availableNow}
-          </button>
+          {!today && (
+            <button
+              type="button"
+              aria-pressed={availableOnly}
+              onClick={() => setAvailableOnly((v) => !v)}
+              className={cn("chip", availableOnly && "chip-active")}
+            >
+              {messages.availableNow}
+            </button>
+          )}
           {dietaryTags.map((tag) => (
             <button
               key={tag.id}
@@ -345,7 +431,17 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
       <div id="menu" className="pb-4">
         {visible.length === 0 && (
           <p className="text-muted-foreground px-4 py-12 text-center">
-            {messages.noResults}
+            {today && !filtersActive ? (
+              <button
+                type="button"
+                onClick={() => chooseView("full")}
+                className="underline underline-offset-4"
+              >
+                {messages.nothingServing}
+              </button>
+            ) : (
+              messages.noResults
+            )}
           </p>
         )}
         {visible.map((category) => (

@@ -25,6 +25,9 @@ export const fa: Messages = {
   limitedBanner: "موجودی محدود.",
   backTo: "بازگشت به {category}",
   fullMenu: "منوی کامل",
+  todaysMenu: "منوی امروز",
+  nothingServing:
+    "در حال حاضر غذایی سرو نمی‌شود. برای دیدن همه غذاها منوی کامل را ببینید.",
   prepTime: "زمان آماده‌سازی",
   minutes: "{count} دقیقه",
   calories: "کالری",

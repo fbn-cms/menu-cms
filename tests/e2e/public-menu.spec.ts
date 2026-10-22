@@ -16,6 +16,14 @@ const sql = (statement: string) =>
 const itemNames = (page: Page, category: string) =>
   page.locator(`section#c-${category} h3`).allTextContents();
 
+/** The last tab: everything, sold-out dishes included. */
+async function openFullMenu(page: Page, locale: string) {
+  await page.goto(`/${locale}/menu#full`);
+  await expect(page.locator('nav button[aria-pressed="true"]')).toHaveText(
+    locale === "fa" ? "منوی کامل" : "Full menu",
+  );
+}
+
 test.describe("public menu", () => {
   test("/ redirects to the browser's language", async ({ browser }) => {
     const context = await browser.newContext({ locale: "fr-CA" });
@@ -25,10 +33,10 @@ test.describe("public menu", () => {
     await context.close();
   });
 
-  test("within a category: available → limited → sold out", async ({
+  test("full menu, within a category: available → limited → sold out", async ({
     page,
   }) => {
-    await page.goto("/en/menu");
+    await openFullMenu(page, "en");
     expect(await itemNames(page, "starters")).toEqual([
       "Kashk-e Bademjan",
       "Shirazi Salad",
@@ -42,7 +50,7 @@ test.describe("public menu", () => {
   test("each dish shows a decorative availability dot in the matching colour", async ({
     page,
   }) => {
-    await page.goto("/en/menu");
+    await openFullMenu(page, "en");
     const classes = {
       available: "bg-emerald-500",
       limited: "bg-amber-400",
@@ -92,7 +100,7 @@ test.describe("public menu", () => {
     page,
   }) => {
     try {
-      await page.goto("/en/menu");
+      await openFullMenu(page, "en");
       await expect(page.locator("[data-live]")).toHaveAttribute(
         "data-live",
         "live",
@@ -114,6 +122,70 @@ test.describe("public menu", () => {
         "update items set availability = 'available' where slug = 'kashk-e-bademjan'",
       );
     }
+  });
+});
+
+test.describe("Today's menu (default view)", () => {
+  test("opens first, hides sold-out dishes; Full menu is the last tab", async ({
+    page,
+  }) => {
+    await page.goto("/en/menu");
+    const tabs = page.getByRole("navigation", { name: "Categories" });
+    await expect(tabs.locator(".chip").first()).toHaveText("Today's menu");
+    await expect(tabs.locator(".chip").first()).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(tabs.locator(".chip").last()).toHaveText("Full menu");
+    await expect(page.getByText("Sold out today")).toHaveCount(0);
+    expect(await itemNames(page, "starters")).not.toContain("Soup of the Day");
+
+    await tabs.getByRole("button", { name: "Full menu" }).click();
+    await expect(page).toHaveURL(/#full$/);
+    expect(await itemNames(page, "starters")).toContain("Soup of the Day");
+
+    await tabs.getByRole("button", { name: "Today's menu" }).click();
+    expect(await itemNames(page, "starters")).not.toContain("Soup of the Day");
+  });
+
+  test("a dish that sells out disappears from Today's menu live", async ({
+    page,
+  }) => {
+    try {
+      await page.goto("/en/menu");
+      await expect(page.locator("[data-live]")).toHaveAttribute(
+        "data-live",
+        "live",
+        { timeout: 15_000 },
+      );
+      expect(await itemNames(page, "starters")).toContain("Kashk-e Bademjan");
+      sql(
+        "update items set availability = 'unavailable' where slug = 'kashk-e-bademjan'",
+      );
+      await expect
+        .poll(() => itemNames(page, "starters"), { timeout: 10_000 })
+        .not.toContain("Kashk-e Bademjan");
+    } finally {
+      sql(
+        "update items set availability = 'available' where slug = 'kashk-e-bademjan'",
+      );
+    }
+  });
+
+  test("a category page links to Today's menu first and Full menu last", async ({
+    page,
+  }) => {
+    await page.goto("/en/menu/starters");
+    const tabs = page
+      .getByRole("navigation", { name: "Categories" })
+      .locator(".chip");
+    await expect(tabs.first()).toHaveText("Today's menu");
+    await expect(tabs.last()).toHaveText("Full menu");
+    await tabs.last().click();
+    await expect(page).toHaveURL(/\/en\/menu#full$/);
+    await expect(
+      page.getByRole("button", { name: "Full menu", pressed: true }),
+    ).toBeVisible();
   });
 });
 
@@ -202,7 +274,7 @@ test.describe("Persian (RTL)", () => {
   test("missing Persian translation falls back to English, never blank", async ({
     page,
   }) => {
-    await page.goto("/fa/menu");
+    await openFullMenu(page, "fa");
     await expect(page.locator("section#c-starters h3").last()).toHaveText(
       "Soup of the Day",
     );

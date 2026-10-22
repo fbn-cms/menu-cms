@@ -25,6 +25,9 @@ export const fr: Messages = {
   limitedBanner: "Disponibilité limitée.",
   backTo: "Retour : {category}",
   fullMenu: "Menu complet",
+  todaysMenu: "Au menu aujourd'hui",
+  nothingServing:
+    "Rien n'est servi pour le moment. Consultez le menu complet pour voir tous nos plats.",
   prepTime: "Préparation",
   minutes: "{count} min",
   calories: "Calories",

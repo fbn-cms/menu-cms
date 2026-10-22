@@ -25,6 +25,9 @@ export const en = {
   limitedBanner: "Limited availability.",
   backTo: "Back to {category}",
   fullMenu: "Full menu",
+  todaysMenu: "Today's menu",
+  nothingServing:
+    "Nothing is being served right now. See the full menu for everything we make.",
   prepTime: "Prep time",
   minutes: "{count} min",
   calories: "Calories",
