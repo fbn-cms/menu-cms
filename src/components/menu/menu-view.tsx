@@ -237,6 +237,11 @@ export function MenuView({ menu, locale, messages, categorySlug }: Props) {
   }, [visible, categorySlug]);
   useEffect(() => {
     if (holdChipScroll.current) return;
+    // At the top of the page keep the row at its start, so the view tabs stay visible.
+    if (window.scrollY < 80) {
+      navRef.current?.scrollTo({ left: 0, behavior: "smooth" });
+      return;
+    }
     navRef.current
       ?.querySelector<HTMLElement>(`[data-chip="${activeSlug}"]`)
       ?.scrollIntoView({
