@@ -25,7 +25,7 @@ const input = z.object({
   availability: z.enum(["available", "limited", "unavailable"]),
   note: z.string().trim().max(140).nullish(),
   remainingQty: z.number().int().min(0).max(9999).nullish(),
-  until: z.enum(["service", "tonight", "manual"]).default("tonight"),
+  until: z.enum(["service", "tonight", "manual"]).default("manual"),
   expectedUpdatedAt: z.string().nullish(),
 });
 

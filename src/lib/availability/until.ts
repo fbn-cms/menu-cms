@@ -1,10 +1,10 @@
 // "Sold out until…" presets for the 86 board, computed in the restaurant's timezone.
 //   service → end of today's service (last closing time in hours_json), else falls back to tonight
-//   tonight → next 04:00 local (the daily reset time)
+//   tonight → next 07:00 local (the daily reset time; owner moved it from 04:00 on 2026-10-22)
 //   manual  → no expiry ("until I change it")
 
 export type UntilPreset = "service" | "tonight" | "manual";
-export const RESET_HOUR = 4;
+export const RESET_HOUR = 7;
 
 type Hours = Partial<
   Record<

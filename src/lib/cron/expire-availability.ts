@@ -1,5 +1,5 @@
 // Hourly: put back on sale every dish whose "sold out / limited until …" time has passed
-// (end of service, 04:00 reset, …). Diners already see those as available (the menu reads
+// (end of service, 07:00 reset, …). Diners already see those as available (the menu reads
 // effective_availability); this clears the stored flag so staff screens and live updates agree.
 // No Next.js imports: runs from the Worker's scheduled() handler.
 

@@ -129,9 +129,10 @@ test.describe("86 board", () => {
     await signIn(page, "staff@demo.test");
     const row = page.getByRole("listitem").filter({ hasText: "Joojeh Kebab" });
     await row.getByRole("radio", { name: "Sold out" }).click(); // tap 1
-    // The sheet pre-selects what the tap already saved ("tonight"), so Save can't silently change it.
+    // The sheet pre-selects what the tap already saved ("until I change it"), so Save can't
+    // silently change it.
     await expect(
-      page.getByRole("radio", { name: "Tonight (back at 4 am)" }),
+      page.getByRole("radio", { name: "Until I change it" }),
     ).toBeChecked();
     await page.getByLabel("Note for diners").fill("Grill is down");
     await page.getByRole("button", { name: "Save" }).click(); // tap 2
@@ -142,9 +143,9 @@ test.describe("86 board", () => {
     );
     expect(
       sql(
-        "select availability || '|' || availability_note from items where slug='joojeh-kebab'",
+        "select availability || '|' || availability_note || '|' || (availability_until is null) from items where slug='joojeh-kebab'",
       ),
-    ).toBe("unavailable|Grill is down");
+    ).toBe("unavailable|Grill is down|true");
 
     const diner = await browser.newPage();
     await diner.goto("/en/item/joojeh-kebab");

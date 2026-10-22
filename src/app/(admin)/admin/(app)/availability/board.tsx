@@ -74,7 +74,7 @@ const STATES: {
 
 const UNTIL: { value: UntilPreset; label: string }[] = [
   { value: "service", label: "Rest of service" },
-  { value: "tonight", label: "Tonight (back at 4 am)" },
+  { value: "tonight", label: "Tonight (back at 7 am)" },
   { value: "manual", label: "Until I change it" },
 ];
 
@@ -188,8 +188,9 @@ export function Board({
     // Open the optional-details sheet straight away, but close it if the save is refused
     // (e.g. someone else changed the dish) so the refreshed row is visible.
     if (state !== "available")
-      setEditing({ id: item.id, state, until: "tonight" }); // same as the save below
-    void save(item.id, { availability: state, until: "tonight" }).then((ok) => {
+      setEditing({ id: item.id, state, until: "manual" }); // same as the save below
+    // Default: stays as set until someone changes it (owner's choice, 2026-10-22).
+    void save(item.id, { availability: state, until: "manual" }).then((ok) => {
       if (!ok) setEditing((e) => (e?.id === item.id ? null : e));
     });
   };
